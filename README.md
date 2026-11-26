@@ -2,8 +2,9 @@
 
 Статичний сайт карти. Безкоштовний хостинг — GitHub Pages.
 
-Після налаштування Pages на джерело **GitHub Actions** кожен push у `main`
-автоматично публікує сайт через workflow
-[pages.yml](./.github/workflows/pages.yml).
+Одноразове налаштування в репозиторії: **Settings → Pages → Build and deployment
+→ Deploy from a branch → `main` → `/(root)` → Save**.
 
-Очікувана адреса сайту: <https://artemkresik1-ai.github.io/map/>.
+Після цього кожен push у `main` автоматично оновлюватиме сайт.
+
+Адреса сайту: <https://artemkresik1-ai.github.io/map/>.
