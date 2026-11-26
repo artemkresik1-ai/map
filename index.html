@@ -15,11 +15,14 @@
   <div id="centerCrosshair" aria-hidden="true"></div>
   <div id="centerCoords" aria-live="polite">48.7000, 31.8000</div>
 
-  <aside class="threat-summary" id="threatSummary" aria-label="Активні загрози">
-    <h2>Активні загрози</h2>
-    <div id="targetFeedStatus" role="status">Завантаження цілей…</div>
-    <div id="threatSummaryRows"></div>
-    <div class="threat-summary-total"><span>Усього видимих</span><strong id="targetCount">0</strong></div>
+  <aside class="threat-summary" id="threatSummary" aria-labelledby="threatSummaryTitle">
+    <h2 id="threatSummaryTitle">Активні загрози</h2>
+    <div id="targetFeedStatus" role="region" aria-label="Стан джерел даних" aria-live="off">Завантаження стану джерел…</div>
+    <h3 class="threat-summary-heading">За джерелом</h3>
+    <div id="targetSourceRows" role="list" aria-label="Кількість цілей за джерелом"></div>
+    <h3 class="threat-summary-heading">За типом</h3>
+    <div id="threatSummaryRows" role="list" aria-label="Кількість цілей за типом"></div>
+    <div class="threat-summary-total"><span>Усього</span><strong id="targetCount" aria-label="Загальна кількість цілей" aria-live="polite">0</strong></div>
     <button class="fit-targets-button" id="fitTargets" type="button" disabled>Показати всі цілі</button>
   </aside>
 

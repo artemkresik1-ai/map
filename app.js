@@ -292,17 +292,34 @@ function renderLiveTargets() {
     targetMarkers.delete(key);
   }
 
-  document.getElementById("targetCount").textContent = String(liveTargets.length);
+  const totalCount = document.getElementById("targetCount");
+  const totalText = String(liveTargets.length);
+  if (totalCount.textContent !== totalText) totalCount.textContent = totalText;
   document.getElementById("fitTargets").disabled = liveTargets.length === 0;
+  const sourceRows = document.getElementById("targetSourceRows");
+  if (sourceRows) {
+    const sourceHtml = [...targetsBySource].map(([source, targets]) =>
+      `<div class="threat-summary-row" role="listitem"><span>${escapeHtml(source)}</span><strong>${targets.length}</strong></div>`
+    ).join("");
+    if (sourceRows.dataset.rendered !== sourceHtml) {
+      sourceRows.innerHTML = sourceHtml;
+      sourceRows.dataset.rendered = sourceHtml;
+    }
+  }
+
   const summaryRows = document.getElementById("threatSummaryRows");
   if (summaryRows) {
-    const counts = {};
+    const counts = new Map();
     liveTargets.forEach(target => {
-      counts[target.label] = (counts[target.label] || 0) + 1;
+      counts.set(target.label, (counts.get(target.label) || 0) + 1);
     });
-    summaryRows.innerHTML = Object.entries(counts).map(([label, count]) =>
-      `<div class="threat-summary-row"><span>${escapeHtml(label)}</span><strong>${count}</strong></div>`
+    const summaryHtml = [...counts].map(([label, count]) =>
+      `<div class="threat-summary-row" role="listitem"><span>${escapeHtml(label)}</span><strong>${count}</strong></div>`
     ).join("");
+    if (summaryRows.dataset.rendered !== summaryHtml) {
+      summaryRows.innerHTML = summaryHtml;
+      summaryRows.dataset.rendered = summaryHtml;
+    }
   }
 }
 
@@ -402,21 +419,46 @@ function readableFeedError(message) {
   return message;
 }
 
+function formatDataAge(ageMs) {
+  const seconds = Math.max(0, Math.floor(ageMs / 1000));
+  if (seconds < 60) return `${seconds} с`;
+  const minutes = Math.floor(seconds / 60);
+  return `${minutes} хв`;
+}
+
 function updateTargetFeedStatus() {
   const status = document.getElementById("targetFeedStatus");
-  const counts = [...targetsBySource].map(([source, targets]) => {
+  const now = Date.now();
+  let hasError = false;
+  let hasStaleFeed = false;
+  status.innerHTML = [...targetsBySource].map(([source]) => {
+    const refreshMs = targetFeedSchedules.find(feed => feed.source === source)?.refreshMs || 5000;
     const lastUpdated = targetFeedLastUpdated.get(source);
-    const lastUpdatedText = lastUpdated
-      ? new Date(lastUpdated).toLocaleTimeString("uk-UA")
-      : "ще не оновлювалось";
+    const ageMs = lastUpdated ? now - lastUpdated : null;
+    const stale = ageMs !== null && ageMs > refreshMs * 3;
     const error = targetFeedErrors.get(source);
-    const state = error
-      ? `${readableFeedError(error)} · дані ${lastUpdatedText}`
-      : `оновлено ${lastUpdatedText}`;
-    return `${source}: ${targets.length} · ${state}`;
-  });
-  status.textContent = `${new Date().toLocaleTimeString("uk-UA")} · ${counts.join(" · ")}`;
-  status.classList.toggle("offline", targetFeedErrors.size > 0);
+    let state = "Очікування першої відповіді";
+    let stateClass = "pending";
+
+    if (error) {
+      hasError = true;
+      stateClass = "offline";
+      state = `Помилка: ${readableFeedError(error)}`;
+      if (stale) state += ` · дані застаріли (${formatDataAge(ageMs)})`;
+      else if (ageMs !== null) state += ` · останні дані ${formatDataAge(ageMs)} тому`;
+    } else if (stale) {
+      hasStaleFeed = true;
+      stateClass = "stale";
+      state = `Дані застаріли · ${formatDataAge(ageMs)} тому`;
+    } else if (ageMs !== null) {
+      stateClass = "online";
+      state = `Оновлено ${formatDataAge(ageMs)} тому`;
+    }
+
+    return `<div class="feed-health-row ${stateClass}" role="listitem"><span class="feed-health-name">${escapeHtml(source)}</span><span class="feed-health-message">${escapeHtml(state)}</span></div>`;
+  }).join("");
+  status.classList.toggle("offline", hasError);
+  status.classList.toggle("stale", hasStaleFeed && !hasError);
 }
 
 async function refreshTargetFeed(source, url, normalize, refreshMs) {

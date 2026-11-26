@@ -243,8 +243,17 @@ body.ui-hidden #topbar, body.ui-hidden #floatingBtns { opacity:0; pointer-events
   font:11px/1.35 var(--sans);
 }
 .threat-summary h2 { margin:0 0 7px; font:700 12px var(--sans); }
-.threat-summary #targetFeedStatus { margin:0 0 8px; color:var(--txt-3); font:10px/1.4 var(--sans); }
+.threat-summary-heading { margin:8px 0 3px; color:var(--txt-3); font:600 9px var(--sans); letter-spacing:.04em; text-transform:uppercase; }
+.threat-summary #targetFeedStatus { display:grid; gap:3px; margin:0 0 7px; font:9px/1.35 var(--sans); }
+.feed-health-row { display:grid; gap:1px; padding:3px 0; border-bottom:1px solid var(--border); }
+.feed-health-name { color:var(--txt-2); font-weight:600; }
+.feed-health-message { color:var(--txt-3); overflow-wrap:anywhere; }
+.feed-health-row.online .feed-health-message { color:#6fbf73; }
+.feed-health-row.offline .feed-health-message { color:var(--red); }
+.feed-health-row.stale .feed-health-message { color:var(--accent); }
+.feed-health-row.pending .feed-health-message { color:var(--txt-3); }
 .threat-summary #targetFeedStatus.offline { color:var(--red); }
+.threat-summary #targetFeedStatus.stale { color:var(--accent); }
 .threat-summary-total { display:flex; justify-content:space-between; padding-top:7px; margin-top:7px; border-top:1px solid var(--border); color:var(--txt-2); }
 .threat-summary-row { display:flex; justify-content:space-between; gap:8px; padding:3px 0; }
 .threat-summary-row strong { color:var(--red); }
