@@ -94,7 +94,9 @@ const TARGET_REQUEST_TIMEOUT_MS = 8000;
 const TARGET_MAX_RETRY_MS = 60000;
 const AVIACONTROL_URL = "https://aviacontrol.com.ua/api/targets";
 
-const DIMAP_URL = location.hostname === "radar.povitryanavarta.pp.ua"
+const usesSameOriginDimapProxy = location.hostname === "radar.povitryanavarta.pp.ua"
+  || location.hostname.endsWith(".vercel.app");
+const DIMAP_URL = usesSameOriginDimapProxy
   ? "/api/dimap"
   : "https://radar.povitryanavarta.pp.ua/api/dimap";
 
