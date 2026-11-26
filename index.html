@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="uk" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+  <title>РУБЕЖ — моніторинг повітряних загроз</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Onest:wght@400;500;600;700;800&family=Press+Start+2P&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="map" aria-label="Карта України"></div>
+  <div id="centerCrosshair" aria-hidden="true"></div>
+  <div id="centerCoords" aria-live="polite">48.7000, 31.8000</div>
+
+  <aside class="threat-summary" id="threatSummary" aria-label="Активні загрози">
+    <h2>Активні загрози</h2>
+    <div id="targetFeedStatus" role="status">Завантаження цілей…</div>
+    <div id="threatSummaryRows"></div>
+    <div class="threat-summary-total"><span>Усього видимих</span><strong id="targetCount">0</strong></div>
+    <button class="fit-targets-button" id="fitTargets" type="button" disabled>Показати всі цілі</button>
+  </aside>
+
+  <header class="topbar" id="topbar">
+    <div class="topbar-main">
+      <p class="topbar-title">РУБІЖ · моніторинг повітряних загроз</p>
+      <p class="topbar-sub">Онлайн-моніторинг · автоматичне оновлення</p>
+    </div>
+    <div class="topbar-menu">
+      <button class="topbar-dots" id="menuToggle" type="button" aria-label="Меню карти" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+      <div class="menu-pop" id="menuPop">
+        <button class="menu-item" id="themeBtn" type="button"><span class="menu-ico">◐</span><span id="themeLabel">Темна тема</span></button>
+        <button class="menu-item" id="locateBtn" type="button"><span class="menu-ico">◎</span><span>Моє місцезнаходження</span></button>
+        <div class="menu-sep"></div>
+        <button class="menu-item" id="settingsToggle" type="button"><span class="menu-ico">⚙</span><span>Розширені налаштування</span></button>
+        <button class="menu-item" id="hideUi" type="button"><span class="menu-ico">—</span><span>Приховати інтерфейс</span></button>
+      </div>
+    </div>
+  </header>
+
+  <button id="restoreUiBtn" type="button">Показати інтерфейс</button>
+
+  <aside id="settingsPanel" class="panel" aria-hidden="true">
+    <div class="panel-header">
+      <h2>Розширені налаштування</h2>
+      <button class="panel-close" id="closeSettings" type="button" aria-label="Закрити">×</button>
+    </div>
+    <div class="panel-body">
+      <div class="group-title">Власний вигляд карти</div>
+      <div class="row">
+        <label for="mapStyle">Стиль карти</label>
+        <select id="mapStyle" class="sel">
+          <option value="dark">Темна тема</option>
+          <option value="light">Світла тема</option>
+        </select>
+      </div>
+      <div class="row">
+        <label for="mapLayerSelect">Шар карти</label>
+        <select id="mapLayerSelect" class="sel">
+          <option value="0">Вулична карта</option>
+          <option value="1">Топографічна карта</option>
+        </select>
+      </div>
+      <div class="row">
+        <label for="showObjects">Об'єкти на карті</label>
+        <button class="switch on" id="showObjects" type="button" role="switch" aria-checked="true"></button>
+      </div>
+      <div class="row">
+        <label for="showNames">Мітки об'єктів</label>
+        <button class="switch on" id="showNames" type="button" role="switch" aria-checked="true"></button>
+      </div>
+      <div class="row">
+        <label for="showRoutes">Маршрути руху</label>
+        <button class="switch" id="showRoutes" type="button" role="switch" aria-checked="false"></button>
+      </div>
+      <div class="row">
+        <label for="showBorder">Державний кордон</label>
+        <button class="switch on" id="showBorder" type="button" role="switch" aria-checked="true"></button>
+      </div>
+      <div class="row">
+        <label for="showCities">Назви міст</label>
+        <button class="switch on" id="showCities" type="button" role="switch" aria-checked="true"></button>
+      </div>
+      <div class="row">
+        <label for="showRegionLabels">Назви областей при наведенні</label>
+        <button class="switch on" id="showRegionLabels" type="button" role="switch" aria-checked="true"></button>
+      </div>
+      <div class="row">
+        <label for="showCrosshair">Перехрестя в центрі</label>
+        <button class="switch on" id="showCrosshair" type="button" role="switch" aria-checked="true"></button>
+      </div>
+      <div class="row">
+        <label for="crosshairOpacity">Прозорість перехрестя</label>
+        <input id="crosshairOpacity" class="rng" type="range" min="0" max="100" value="70">
+        <output id="crosshairOpacityValue">70%</output>
+      </div>
+      <div class="row">
+        <label for="objectSize">Розмір об'єктів</label>
+        <input id="objectSize" class="rng" type="range" min="60" max="160" value="100">
+        <output id="objectSizeValue">100%</output>
+      </div>
+      <div class="row">
+        <label for="showGlow">Світіння об'єктів</label>
+        <button class="switch on" id="showGlow" type="button" role="switch" aria-checked="true"></button>
+      </div>
+      <div class="group-title">Інформація</div>
+      <p class="note">Дані на карті беруться з відкритих джерел і відображаються в інформаційних цілях.</p>
+      <button class="sel btn-block" id="resetView" type="button">Скинути масштаб карти</button>
+    </div>
+  </aside>
+
+  <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
