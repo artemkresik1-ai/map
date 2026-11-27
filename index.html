@@ -616,7 +616,7 @@ const defaultSettings = {
     showUkraineMask: true,
     objColor: "blue",
     showThreatZones: true,
-    showAirAlerts: false,
+    showAirAlerts: true,
     glow: false,
     showCrosshair: false,
     crosshairOpacity: 0.7,
@@ -666,6 +666,16 @@ settings.objectSize = Math.max(0.6, Math.min(1.6, Number(settings.objectSize) ||
 settings.iconOutline = true;
 let currentTheme = "dark";
 let currentMapKey = "osm";
+const AIR_ALERTS_MIGRATION_KEY = "radar_air_alerts_enabled_v1";
+try {
+    if (localStorage.getItem(AIR_ALERTS_MIGRATION_KEY) !== "1") {
+        settings.showAirAlerts = true;
+        saveSettings();
+        localStorage.setItem(AIR_ALERTS_MIGRATION_KEY, "1");
+    }
+} catch (e) {
+    settings.showAirAlerts = true;
+}
 
 function applyTheme(theme) {
     currentTheme = theme;
@@ -1102,18 +1112,27 @@ async function loadOccupiedRegions() {
     if (occupiedData) return;
     if (occupiedLoading) return occupiedLoading;
     occupiedLoading = (async () => {
+        const sources = [
+            "/ukraine_regions.geojson",
+            "https://raw.githubusercontent.com/slawomirmatuszak/ukrainian_geodata/main/regiony.geojson"
+        ];
         try {
-            const res = await fetch("/ukraine_regions.geojson");
-            if (!res.ok) throw new Error('HTTP ' + res.status);
-            const data = await res.json();
-            if (!data || !Array.isArray(data.features)) throw new Error('bad geojson');
-            occupiedData = data;
-            renderVisibleMask();
-            renderOccupiedRegions();
-            renderAirAlertRegions();
-            renderLightRadarBoundaries();
-        } catch (e) {
-            console.warn('Region boundaries:', e && e.message ? e.message : e);
+            for (const url of sources) {
+                try {
+                    const res = await fetch(url, { cache: "force-cache" });
+                    if (!res.ok) throw new Error('HTTP ' + res.status);
+                    const data = await res.json();
+                    if (!data || !Array.isArray(data.features)) throw new Error('bad geojson');
+                    occupiedData = data;
+                    renderVisibleMask();
+                    renderOccupiedRegions();
+                    renderAirAlertRegions();
+                    renderLightRadarBoundaries();
+                    return;
+                } catch (e) {
+                    console.warn('Region boundaries source failed:', url, e && e.message ? e.message : e);
+                }
+            }
         } finally { occupiedLoading = null; }
     })();
     return occupiedLoading;
@@ -1123,7 +1142,7 @@ function isOccupiedFeature(feature) {
     const props = feature.properties || {};
     const iso = String(props.shapeISO || "").toUpperCase();
     if (OCCUPIED_ISO.has(iso)) return true;
-    const name = String(props.shapeName || "").toLowerCase();
+    const name = String(props.shapeName || props.region || "").toLowerCase();
     for (const re of OCCUPIED_NAME_PATTERNS) if (re.test(name)) return true;
     return false;
 }
@@ -1195,10 +1214,24 @@ function airAlertStyle(level) {
 async function loadAirAlertRaions() {
     if (airAlertRaionsData) return;
     if (!airAlertRaionsLoading) {
-        airAlertRaionsLoading = fetch('/ukraine_raions.geojson')
-            .then(response => { if (!response.ok) throw new Error('Raion boundaries unavailable'); return response.json(); })
-            .then(data => { airAlertRaionsData = data; renderAirAlertRegions(); try { initRaionHover(data); } catch (e) {} })
-            .catch(error => { airAlertRaionsLoading = null; console.warn('Raion boundaries:', error.message); });
+        airAlertRaionsLoading = (async () => {
+            const sources = [
+                '/ukraine_raions.geojson',
+                'https://raw.githubusercontent.com/slawomirmatuszak/ukrainian_geodata/main/rayony.geojson'
+            ];
+            for (const url of sources) {
+                try {
+                    const response = await fetch(url, { cache: 'force-cache' });
+                    if (!response.ok) throw new Error('HTTP ' + response.status);
+                    airAlertRaionsData = await response.json();
+                    renderAirAlertRegions();
+                    try { initRaionHover(airAlertRaionsData); } catch (e) {}
+                    return;
+                } catch (error) {
+                    console.warn('Raion boundaries source failed:', url, error.message);
+                }
+            }
+        })().finally(() => { airAlertRaionsLoading = null; });
     }
     return airAlertRaionsLoading;
 }
@@ -1418,10 +1451,23 @@ async function loadRaionHover() {
 async function loadAirAlertHromady() {
     if (airAlertHromadyData) return;
     if (!airAlertHromadyLoading) {
-        airAlertHromadyLoading = fetch('/ukraine_hromady.geojson')
-            .then(response => { if (!response.ok) throw new Error('Hromada boundaries unavailable'); return response.json(); })
-            .then(data => { airAlertHromadyData = data; renderAirAlertRegions(); })
-            .catch(error => { airAlertHromadyLoading = null; console.warn('Hromada boundaries:', error.message); });
+        airAlertHromadyLoading = (async () => {
+            const sources = [
+                '/ukraine_hromady.geojson',
+                'https://raw.githubusercontent.com/slawomirmatuszak/ukrainian_geodata/main/hromady.geojson'
+            ];
+            for (const url of sources) {
+                try {
+                    const response = await fetch(url, { cache: 'force-cache' });
+                    if (!response.ok) throw new Error('HTTP ' + response.status);
+                    airAlertHromadyData = await response.json();
+                    renderAirAlertRegions();
+                    return;
+                } catch (error) {
+                    console.warn('Hromada boundaries source failed:', url, error.message);
+                }
+            }
+        })().finally(() => { airAlertHromadyLoading = null; });
     }
     return airAlertHromadyLoading;
 }
@@ -1435,7 +1481,10 @@ function renderAirAlertRegions() {
         districtRegions.set(airAlertRaionName(p.rayon), airAlertOblastName(p.region));
     }
     for (const feature of occupiedData.features || []) {
-        const level = airAlertIso.get(feature.properties?.shapeISO);
+        const props = feature.properties || {};
+        const regionName = airAlertOblastName(props.region || props.shapeName);
+        const regionIso = props.shapeISO || AIR_ALERT_REGION_ISO[regionName];
+        const level = airAlertIso.get(regionIso);
         if (level) L.geoJSON(feature, { style: airAlertStyle(level), interactive: false }).addTo(airAlertsLayer);
     }
     if (airAlertRaionsData) for (const feature of airAlertRaionsData.features || []) {
@@ -1558,6 +1607,7 @@ function normalizeAirAlertPayload(raw) {
 }
 const AIR_ALERT_SOURCES = [
     '/api/ukrainealarm',
+    '/api/air-alerts',
     'https://ubilling.net.ua/aerialalerts/'   // открытый резервный источник (только по областям)
 ];
 async function fetchAirAlertData() {
