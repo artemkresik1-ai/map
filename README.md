@@ -21,9 +21,9 @@ Vercel-функція `/api/telegram-webhook` відповідає лише на
 2. У Vercel додайте змінні `TELEGRAM_BOT_TOKEN` і
    `TELEGRAM_WEBHOOK_SECRET` для Production. Для webhook-секрету створіть
    випадковий рядок щонайменше з 32 символів.
-3. Налаштуйте Telegram webhook на
-   `https://<ваш-домен>/api/telegram-webhook` із тим самим значенням
-   `TELEGRAM_WEBHOOK_SECRET`, після чого виконайте redeploy.
+3. Зробіть redeploy, відкрийте `https://map-three-brown.vercel.app/telegram-setup.html`,
+   введіть значення `TELEGRAM_WEBHOOK_SECRET` з Vercel і натисніть
+   «Зареєструвати webhook».
 
 Не додавайте токен до HTML, JavaScript, Git або URL, які можуть потрапити в
 історію браузера чи логи. Бот не надсилає попереджень про рух об'єктів.

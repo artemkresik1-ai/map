@@ -41,7 +41,7 @@ module.exports = async function handler(request, response) {
   if (!token || !webhookSecret || !/^[A-Za-z0-9_-]{32,256}$/.test(webhookSecret)) {
     return response.status(503).json({
       ok: false,
-      error: "Telegram webhook is not configured"
+      error: "Add TELEGRAM_BOT_TOKEN and a valid TELEGRAM_WEBHOOK_SECRET in Vercel"
     });
   }
 

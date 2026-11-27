@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Настройка Telegram-бота · Арт.Радар</title>
+  <style>
+    :root { color-scheme:dark; font:16px/1.5 system-ui,sans-serif; background:#101820; color:#e8f0f4; }
+    * { box-sizing:border-box; }
+    body { min-height:100vh; display:grid; place-items:center; margin:0; padding:20px; }
+    main { width:min(100%,520px); padding:24px; background:#17232d; border:1px solid #344956; border-radius:14px; }
+    h1 { margin:0 0 8px; font-size:22px; }
+    p { color:#b5c5ce; }
+    label { display:block; margin:20px 0 6px; font-weight:600; }
+    input { width:100%; min-height:44px; padding:10px 12px; color:inherit; background:#101820; border:1px solid #526a78; border-radius:8px; font:14px ui-monospace,monospace; }
+    button { min-height:42px; padding:9px 14px; color:#09171d; background:#55c5dd; border:0; border-radius:8px; font:700 14px system-ui,sans-serif; cursor:pointer; }
+    button:disabled { opacity:.55; cursor:wait; }
+    .actions { display:flex; flex-wrap:wrap; gap:10px; margin-top:12px; }
+    .secondary { color:#e8f0f4; background:#2a3c49; }
+    #status { min-height:24px; margin:16px 0 0; overflow-wrap:anywhere; }
+    #status.error { color:#ff858e; }
+    #status.success { color:#75d8aa; }
+    .note { padding:12px; background:#202f3b; border-left:3px solid #55c5dd; border-radius:4px; font-size:14px; }
+    a { color:#77d4e6; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Підключення Telegram-бота</h1>
+    <p>Один раз зареєструй адресу доставки повідомлень бота.</p>
+    <p class="note">Додай у Vercel змінну <code>TELEGRAM_BOT_TOKEN</code> (новий токен) і створи <code>TELEGRAM_WEBHOOK_SECRET</code>. Збережи обидві змінні та виконай redeploy. Якщо секрету ще немає, згенеруй його нижче, додай у Vercel, а потім натисни реєстрацію. Старий токен, опублікований у чаті, потрібно відкликати в BotFather.</p>
+    <label for="webhookSecret">TELEGRAM_WEBHOOK_SECRET з Vercel</label>
+    <input id="webhookSecret" type="password" autocomplete="off" spellcheck="false">
+    <div class="actions">
+      <button id="generateSecret" class="secondary" type="button">Згенерувати секрет</button>
+      <button id="copySecret" class="secondary" type="button">Копіювати</button>
+      <button id="register" type="button">Зареєструвати webhook</button>
+      <button id="toggleSecret" class="secondary" type="button">Показати</button>
+    </div>
+    <p id="status" role="status" aria-live="polite"></p>
+    <p><a href="/">Повернутися на Арт.Радар</a></p>
+  </main>
+  <script>
+    const secretInput = document.getElementById("webhookSecret");
+    const registerButton = document.getElementById("register");
+    const status = document.getElementById("status");
+
+    document.getElementById("generateSecret").addEventListener("click", () => {
+      const bytes = crypto.getRandomValues(new Uint8Array(32));
+      secretInput.value = Array.from(bytes, byte => byte.toString(16).padStart(2, "0")).join("");
+      secretInput.type = "text";
+      status.className = "";
+      status.textContent = "Скопіюй цей секрет у Vercel як TELEGRAM_WEBHOOK_SECRET і виконай redeploy.";
+    });
+
+    document.getElementById("copySecret").addEventListener("click", async () => {
+      if (!secretInput.value) {
+        status.className = "error";
+        status.textContent = "Спочатку введи або згенеруй секрет.";
+        return;
+      }
+      try {
+        await navigator.clipboard.writeText(secretInput.value);
+        status.className = "success";
+        status.textContent = "Секрет скопійовано.";
+      } catch {
+        status.className = "error";
+        status.textContent = "Не вдалося скопіювати автоматично. Виділи секрет і скопіюй вручну.";
+      }
+    });
+
+    document.getElementById("toggleSecret").addEventListener("click", event => {
+      const visible = secretInput.type === "password";
+      secretInput.type = visible ? "text" : "password";
+      event.currentTarget.textContent = visible ? "Сховати" : "Показати";
+    });
+
+    registerButton.addEventListener("click", async () => {
+      const secret = secretInput.value.trim();
+      if (!/^[A-Za-z0-9_-]{32,256}$/.test(secret)) {
+        status.className = "error";
+        status.textContent = "Секрет має містити 32–256 символів: латинські літери, цифри, _ або -.";
+        return;
+      }
+
+      registerButton.disabled = true;
+      status.className = "";
+      status.textContent = "Реєструю webhook…";
+      try {
+        const response = await fetch("/api/telegram-setup", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ secret })
+        });
+        const result = await response.json();
+        if (!response.ok || !result?.ok) {
+          throw new Error(result?.error || `HTTP ${response.status}`);
+        }
+        status.className = "success";
+        status.textContent = "Готово! Тепер відкрий бота в Telegram і надішли /start.";
+        secretInput.value = "";
+      } catch (error) {
+        status.className = "error";
+        status.textContent = `Не вдалося налаштувати: ${error.message}`;
+      } finally {
+        registerButton.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
