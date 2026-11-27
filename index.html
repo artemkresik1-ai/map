@@ -101,6 +101,37 @@ html[data-motion="reduce"] *, html[data-motion="reduce"] *::before, html[data-mo
 #showTopbarBtn.visible { transform:translate(-50%,0); opacity:1; pointer-events:auto; }
 #showTopbarBtn:hover { color:var(--accent); }
 
+/* пошук міста та області на карті */
+#mapSearch { position:fixed; top:calc(var(--bar-h) + 14px); left:50%; z-index:950; width:min(340px,calc(100vw - 90px)); transform:translateX(-50%); }
+#mapSearchInput {
+  width:100%; height:42px; padding:0 14px 0 42px; color:var(--txt); background:rgba(13,23,38,.94);
+  border:1px solid var(--border-strong); border-radius:12px; box-shadow:var(--shadow);
+  font:500 12px var(--sans); backdrop-filter:blur(16px);
+}
+html[data-theme="light"] #mapSearchInput { background:rgba(248,251,253,.96); }
+#mapSearchInput:focus { border-color:var(--accent); outline:3px solid color-mix(in srgb,var(--accent) 35%,transparent); }
+#mapSearch::before {
+  content:""; position:absolute; left:15px; top:13px; width:13px; height:13px;
+  border:2px solid var(--txt-3); border-radius:50%; pointer-events:none;
+}
+#mapSearch::after {
+  content:""; position:absolute; left:28px; top:26px; width:7px; height:2px;
+  background:var(--txt-3); transform:rotate(45deg); transform-origin:left center; pointer-events:none;
+}
+#mapSearchResults {
+  position:absolute; top:calc(100% + 6px); left:0; right:0; max-height:min(55vh,360px); overflow:auto;
+  padding:5px; background:var(--bg-2); border:1px solid var(--border-strong);
+  border-radius:12px; box-shadow:var(--shadow);
+}
+#mapSearchResults[hidden] { display:none; }
+.map-search-option {
+  display:grid; width:100%; gap:2px; padding:9px 10px; text-align:left; color:var(--txt);
+  background:transparent; border:0; border-radius:8px;
+}
+.map-search-option:hover, .map-search-option.active { background:var(--bg-3); }
+.map-search-option-name { font:600 12px var(--sans); }
+.map-search-option-type { color:var(--txt-3); font:500 9px var(--mono); }
+.map-search-empty { padding:10px; color:var(--txt-3); font-size:11px; }
 /* правая колонка кнопок */
 #floatingBtns { position:fixed; top:calc(var(--bar-h) + 12px); right:0; z-index:999; display:flex; flex-direction:column; background:var(--bg); border:1px solid var(--border-strong); border-right:0; border-radius:var(--radius) 0 0 var(--radius); box-shadow:var(--shadow); }
 .fbtn { width:40px; height:40px; display:grid; place-items:center; background:none; border:0; border-bottom:1px solid var(--border); color:var(--txt-2); text-decoration:none; }
@@ -606,10 +637,10 @@ html[data-theme="light"] .leaflet-bar a:hover { background:rgba(248,251,253,.95)
 .radar-target-label {
   position:absolute;
   display:grid;
-  gap:4px;
-  min-width:118px;
-  max-width:190px;
-  padding:6px 8px;
+  gap:5px;
+  min-width:150px;
+  max-width:220px;
+  padding:7px 9px;
   transform:translate(20px,-50%);
   color:var(--txt);
   background:rgba(8,17,30,.9);
@@ -653,6 +684,17 @@ html[data-theme="light"] .radar-target-label { background:rgba(248,251,253,.94);
   border-top:1px solid var(--border);
   font:500 8px var(--mono);
 }
+.radar-target-label .nl-route {
+  overflow:hidden;
+  padding:3px 5px;
+  color:var(--txt-2);
+  background:var(--bg-3);
+  border-radius:5px;
+  font-size:8px;
+  text-overflow:ellipsis;
+}
+.radar-target-label .nl-meta { color:var(--txt-2); font:600 8px var(--mono); }
+.radar-target-label .nl-live { color:var(--green); font-weight:700; letter-spacing:.04em; }
 .target-block-label {
   display:grid;
   gap:4px;
@@ -737,6 +779,12 @@ html[data-theme="light"] .target-block-label { background:rgba(248,251,253,.94);
   <button class="tb-hide" onclick="document.getElementById('topbar').classList.add('hidden');document.getElementById('showTopbarBtn').classList.add('visible')">Сховати</button>
 </header>
 <button id="showTopbarBtn" onclick="document.getElementById('topbar').classList.remove('hidden');this.classList.remove('visible')">Показати панель</button>
+<div id="mapSearch" role="search">
+  <input id="mapSearchInput" type="search" autocomplete="off" spellcheck="false"
+    placeholder="Пошук міста або області" aria-label="Пошук міста або області"
+    aria-autocomplete="list" aria-controls="mapSearchResults" aria-expanded="false">
+  <div id="mapSearchResults" role="listbox" aria-label="Результати пошуку" hidden></div>
+</div>
 
 <nav id="floatingBtns">
   <button class="fbtn" id="settingsBtn" title="Налаштування" aria-label="Налаштування" aria-controls="settingsPanel" aria-expanded="false">
@@ -1037,6 +1085,10 @@ const uiTranslations = {
         "Оновлено інтерфейс, додано пресети карти, посилання на її вигляд, три мови та встановлення як застосунку.": "Обновлён интерфейс, добавлены пресеты карты, ссылки на её вид, три языка и установка как приложения.",
         "Звіт за 48 годин": "Отчёт за 48 часов", "Експорт CSV": "Экспорт CSV", "Друк / PDF": "Печать / PDF",
         "Звіт враховує вибраний рівень тривоги та збережений район.": "Отчёт учитывает выбранный уровень тревоги и сохранённый район.",
+        "Пошук міста або області": "Поиск города или области", "Результати пошуку": "Результаты поиска",
+        "Місто": "Город", "Область": "Область", "Нічого не знайдено": "Ничего не найдено",
+        "Знайдено": "Найдено",
+        "Напрямок:": "Направление:", "Курс не зазначено": "Курс не указан", "НА РАДАРІ": "НА РАДАРЕ",
         "Звіт про повітряні тривоги — 48 годин": "Отчёт о воздушных тревогах — 48 часов",
         "Немає записів за вибраними фільтрами.": "Нет записей по выбранным фильтрам.",
         "Звіт CSV завантажено.": "Отчёт CSV загружен.",
@@ -1089,6 +1141,10 @@ const uiTranslations = {
         "Оновлено інтерфейс, додано пресети карти, посилання на її вигляд, три мови та встановлення як застосунку.": "Refreshed the interface; added map presets, shareable views, three languages, and app installation.",
         "Звіт за 48 годин": "48-hour report", "Експорт CSV": "Export CSV", "Друк / PDF": "Print / PDF",
         "Звіт враховує вибраний рівень тривоги та збережений район.": "The report uses the selected alert level and saved district filters.",
+        "Пошук міста або області": "Search a city or region", "Результати пошуку": "Search results",
+        "Місто": "City", "Область": "Region", "Нічого не знайдено": "No results found",
+        "Знайдено": "Found",
+        "Напрямок:": "Heading:", "Курс не зазначено": "Course not provided", "НА РАДАРІ": "ON RADAR",
         "Звіт про повітряні тривоги — 48 годин": "Air-alert report — 48 hours",
         "Немає записів за вибраними фільтрами.": "No records for the selected filters.",
         "Звіт CSV завантажено.": "CSV report downloaded.",
@@ -1196,6 +1252,8 @@ if (languageSelect) {
         settings.language = ["uk", "ru", "en"].includes(languageSelect.value) ? languageSelect.value : "uk";
         applyInterfaceLanguage();
         updateAlertReportSummary();
+        updateAllLabels();
+        if (mapSearchInput.value.trim()) renderMapSearchResults(mapSearchInput.value);
         saveSettings();
     });
 }
@@ -1558,6 +1616,75 @@ const map = L.map("map", {
 }).setView(sharedMapState ? sharedMapState.center : [48.5, 32.0], sharedMapState ? sharedMapState.zoom : 6);
 map.getContainer().setAttribute("aria-label", "Інтерактивна карта України. Стрілки переміщують карту, плюс і мінус змінюють масштаб.");
 
+const MAP_SEARCH_CITIES = [
+    { names: { uk: "Київ", ru: "Киев", en: "Kyiv" }, aliases: ["київ", "киев", "kyiv", "kiev"], center: [50.4501, 30.5234] },
+    { names: { uk: "Харків", ru: "Харьков", en: "Kharkiv" }, aliases: ["харків", "харьков", "kharkiv", "kharkov"], center: [49.9935, 36.2304] },
+    { names: { uk: "Одеса", ru: "Одесса", en: "Odesa" }, aliases: ["одеса", "одесса", "odesa", "odessa"], center: [46.4825, 30.7233] },
+    { names: { uk: "Дніпро", ru: "Днепр", en: "Dnipro" }, aliases: ["дніпро", "днепр", "dnipro", "dnepr"], center: [48.4647, 35.0462] },
+    { names: { uk: "Львів", ru: "Львов", en: "Lviv" }, aliases: ["львів", "львов", "lviv", "lvov"], center: [49.8397, 24.0297] },
+    { names: { uk: "Запоріжжя", ru: "Запорожье", en: "Zaporizhzhia" }, aliases: ["запоріжжя", "запорожье", "zaporizhzhia", "zaporozhye"], center: [47.8388, 35.1396] },
+    { names: { uk: "Миколаїв", ru: "Николаев", en: "Mykolaiv" }, aliases: ["миколаїв", "николаев", "mykolaiv", "nikolaev"], center: [46.975, 31.9946] },
+    { names: { uk: "Херсон", ru: "Херсон", en: "Kherson" }, aliases: ["херсон", "kherson"], center: [46.6354, 32.6169] },
+    { names: { uk: "Суми", ru: "Сумы", en: "Sumy" }, aliases: ["суми", "сумы", "sumy"], center: [50.9077, 34.7981] },
+    { names: { uk: "Чернігів", ru: "Чернигов", en: "Chernihiv" }, aliases: ["чернігів", "чернигов", "chernihiv", "chernigov"], center: [51.4982, 31.2893] },
+    { names: { uk: "Полтава", ru: "Полтава", en: "Poltava" }, aliases: ["полтава", "poltava"], center: [49.5883, 34.5514] },
+    { names: { uk: "Вінниця", ru: "Винница", en: "Vinnytsia" }, aliases: ["вінниця", "винница", "vinnytsia", "vinnitsa"], center: [49.2331, 28.4682] },
+    { names: { uk: "Черкаси", ru: "Черкассы", en: "Cherkasy" }, aliases: ["черкаси", "черкассы", "cherkasy", "cherkassy"], center: [49.4444, 32.0598] },
+    { names: { uk: "Житомир", ru: "Житомир", en: "Zhytomyr" }, aliases: ["житомир", "zhytomyr", "zhitomir"], center: [50.2547, 28.6587] },
+    { names: { uk: "Рівне", ru: "Ровно", en: "Rivne" }, aliases: ["рівне", "ровно", "rivne", "rovno"], center: [50.6199, 26.2516] },
+    { names: { uk: "Луцьк", ru: "Луцк", en: "Lutsk" }, aliases: ["луцьк", "луцк", "lutsk"], center: [50.7472, 25.3254] },
+    { names: { uk: "Тернопіль", ru: "Тернополь", en: "Ternopil" }, aliases: ["тернопіль", "тернополь", "ternopil"], center: [49.5535, 25.5948] },
+    { names: { uk: "Івано-Франківськ", ru: "Ивано-Франковск", en: "Ivano-Frankivsk" }, aliases: ["івано-франківськ", "ивано-франковск", "ivano-frankivsk", "ivano frankivsk"], center: [48.9226, 24.7111] },
+    { names: { uk: "Ужгород", ru: "Ужгород", en: "Uzhhorod" }, aliases: ["ужгород", "uzhhorod", "uzhgorod"], center: [48.6208, 22.2879] },
+    { names: { uk: "Чернівці", ru: "Черновцы", en: "Chernivtsi" }, aliases: ["чернівці", "черновцы", "chernivtsi", "chernovtsy"], center: [48.2915, 25.9403] },
+    { names: { uk: "Хмельницький", ru: "Хмельницкий", en: "Khmelnytskyi" }, aliases: ["хмельницький", "хмельницкий", "khmelnytskyi", "khmelnitsky"], center: [49.4229, 26.9871] },
+    { names: { uk: "Кропивницький", ru: "Кропивницкий", en: "Kropyvnytskyi" }, aliases: ["кропивницький", "кропивницкий", "kropyvnytskyi", "kirovohrad"], center: [48.5079, 32.2623] },
+    { names: { uk: "Донецьк", ru: "Донецк", en: "Donetsk" }, aliases: ["донецьк", "донецк", "donetsk"], center: [48.0159, 37.8028] },
+    { names: { uk: "Луганськ", ru: "Луганск", en: "Luhansk" }, aliases: ["луганськ", "луганск", "luhansk", "lugansk"], center: [48.574, 39.3078] },
+    { names: { uk: "Маріуполь", ru: "Мариуполь", en: "Mariupol" }, aliases: ["маріуполь", "мариуполь", "mariupol"], center: [47.0971, 37.5434] },
+    { names: { uk: "Сімферополь", ru: "Симферополь", en: "Simferopol" }, aliases: ["сімферополь", "симферополь", "simferopol"], center: [44.9521, 34.1024] }
+];
+const MAP_SEARCH_REGIONS = [
+    { iso: "UA-07", names: { uk: "Волинська область", ru: "Волынская область", en: "Volyn Oblast" }, aliases: ["волинська", "волынская", "volyn"] },
+    { iso: "UA-56", names: { uk: "Рівненська область", ru: "Ровненская область", en: "Rivne Oblast" }, aliases: ["рівненська", "ровненская", "rivne oblast"] },
+    { iso: "UA-18", names: { uk: "Житомирська область", ru: "Житомирская область", en: "Zhytomyr Oblast" }, aliases: ["житомирська", "житомирская", "zhytomyr oblast"] },
+    { iso: "UA-32", names: { uk: "Київська область", ru: "Киевская область", en: "Kyiv Oblast" }, aliases: ["київська", "киевская", "kyiv oblast", "kiev oblast"] },
+    { iso: "UA-74", names: { uk: "Чернігівська область", ru: "Черниговская область", en: "Chernihiv Oblast" }, aliases: ["чернігівська", "черниговская", "chernihiv oblast"] },
+    { iso: "UA-59", names: { uk: "Сумська область", ru: "Сумская область", en: "Sumy Oblast" }, aliases: ["сумська", "сумская", "sumy oblast"] },
+    { iso: "UA-63", names: { uk: "Харківська область", ru: "Харьковская область", en: "Kharkiv Oblast" }, aliases: ["харківська", "харьковская", "kharkiv oblast"] },
+    { iso: "UA-09", names: { uk: "Луганська область", ru: "Луганская область", en: "Luhansk Oblast" }, aliases: ["луганська", "луганская", "luhansk oblast"] },
+    { iso: "UA-14", names: { uk: "Донецька область", ru: "Донецкая область", en: "Donetsk Oblast" }, aliases: ["донецька", "донецкая", "donetsk oblast"] },
+    { iso: "UA-23", names: { uk: "Запорізька область", ru: "Запорожская область", en: "Zaporizhzhia Oblast" }, aliases: ["запорізька", "запорожская", "zaporizhzhia oblast"] },
+    { iso: "UA-46", names: { uk: "Львівська область", ru: "Львовская область", en: "Lviv Oblast" }, aliases: ["львівська", "львовская", "lviv oblast"] },
+    { iso: "UA-26", names: { uk: "Івано-Франківська область", ru: "Ивано-Франковская область", en: "Ivano-Frankivsk Oblast" }, aliases: ["івано-франківська", "ивано-франковская", "ivano-frankivsk oblast"] },
+    { iso: "UA-21", names: { uk: "Закарпатська область", ru: "Закарпатская область", en: "Zakarpattia Oblast" }, aliases: ["закарпатська", "закарпатская", "zakarpattia"] },
+    { iso: "UA-61", names: { uk: "Тернопільська область", ru: "Тернопольская область", en: "Ternopil Oblast" }, aliases: ["тернопільська", "тернопольская", "ternopil oblast"] },
+    { iso: "UA-77", names: { uk: "Чернівецька область", ru: "Черновицкая область", en: "Chernivtsi Oblast" }, aliases: ["чернівецька", "черновицкая", "chernivtsi oblast"] },
+    { iso: "UA-51", names: { uk: "Одеська область", ru: "Одесская область", en: "Odesa Oblast" }, aliases: ["одеська", "одесская", "odesa oblast", "odessa oblast"] },
+    { iso: "UA-48", names: { uk: "Миколаївська область", ru: "Николаевская область", en: "Mykolaiv Oblast" }, aliases: ["миколаївська", "николаевская", "mykolaiv oblast"] },
+    { iso: "UA-05", names: { uk: "Вінницька область", ru: "Винницкая область", en: "Vinnytsia Oblast" }, aliases: ["вінницька", "винницкая", "vinnytsia oblast"] },
+    { iso: "UA-68", names: { uk: "Хмельницька область", ru: "Хмельницкая область", en: "Khmelnytskyi Oblast" }, aliases: ["хмельницька", "хмельницкая", "khmelnytskyi oblast"] },
+    { iso: "UA-71", names: { uk: "Черкаська область", ru: "Черкасская область", en: "Cherkasy Oblast" }, aliases: ["черкаська", "черкасская", "cherkasy oblast"] },
+    { iso: "UA-53", names: { uk: "Полтавська область", ru: "Полтавская область", en: "Poltava Oblast" }, aliases: ["полтавська", "полтавская", "poltava oblast"] },
+    { iso: "UA-12", names: { uk: "Дніпропетровська область", ru: "Днепропетровская область", en: "Dnipropetrovsk Oblast" }, aliases: ["дніпропетровська", "днепропетровская", "dnipropetrovsk", "дніпропетровщина"] },
+    { iso: "UA-35", names: { uk: "Кіровоградська область", ru: "Кировоградская область", en: "Kirovohrad Oblast" }, aliases: ["кіровоградська", "кировоградская", "kirovohrad oblast"] },
+    { iso: "UA-65", names: { uk: "Херсонська область", ru: "Херсонская область", en: "Kherson Oblast" }, aliases: ["херсонська", "херсонская", "kherson oblast"] },
+    { iso: "UA-43", names: { uk: "Автономна Республіка Крим", ru: "Автономная Республика Крым", en: "Autonomous Republic of Crimea" }, aliases: ["ар крим", "арк", "кримська автономна республіка"] },
+    { iso: "UA-30", names: { uk: "Місто Київ", ru: "Город Киев", en: "City of Kyiv" }, aliases: ["м. київ", "місто київ", "город киев", "kyiv city", "kiev city"] },
+    { iso: "UA-40", names: { uk: "Місто Севастополь", ru: "Город Севастополь", en: "City of Sevastopol" }, aliases: ["м. севастополь", "місто севастополь", "город севастополь"] }
+];
+const MAP_SEARCH_REGION_CENTERS = {
+    "UA-07": [50.7472, 25.3254], "UA-56": [50.6199, 26.2516], "UA-18": [50.2547, 28.6587],
+    "UA-32": [50.4501, 30.5234], "UA-74": [51.4982, 31.2893], "UA-59": [50.9077, 34.7981],
+    "UA-63": [49.9935, 36.2304], "UA-09": [48.574, 39.3078], "UA-14": [48.0159, 37.8028],
+    "UA-23": [47.8388, 35.1396], "UA-46": [49.8397, 24.0297], "UA-26": [48.9226, 24.7111],
+    "UA-21": [48.6208, 22.2879], "UA-61": [49.5535, 25.5948], "UA-77": [48.2915, 25.9403],
+    "UA-51": [46.4825, 30.7233], "UA-48": [46.975, 31.9946], "UA-05": [49.2331, 28.4682],
+    "UA-68": [49.4229, 26.9871], "UA-71": [49.4444, 32.0598], "UA-53": [49.5883, 34.5514],
+    "UA-12": [48.4647, 35.0462], "UA-35": [48.5079, 32.2623], "UA-65": [46.6354, 32.6169],
+    "UA-43": [45.0353, 34.1], "UA-30": [50.4501, 30.5234], "UA-40": [44.6167, 33.5254]
+};
+
 const maskLayer = L.layerGroup().addTo(map);
 
 // ═══ ВИДИМАЯ ЗОНА: только Украина + приграничные области РФ ═══
@@ -1712,6 +1839,7 @@ async function loadOccupiedRegions() {
                     const data = await res.json();
                     if (!data || !Array.isArray(data.features)) throw new Error('bad geojson');
                     occupiedData = data;
+                    refreshMapSearchPlaces();
                     renderVisibleMask();
                     renderOccupiedRegions();
                     renderAirAlertRegions();
@@ -3153,14 +3281,15 @@ function flyerAgeLabel(f) {
     }
     return String(m).padStart(2, "0") + ":" + String(s).padStart(2, "0");
 }
-function makeNameLabel(latlng, name, type, num, speed, age) {
+function makeNameLabel(latlng, name, type, num, speed, age, target, emoji) {
     const text = value => String(value ?? '').replace(/[&<>"']/g, char => ({
         '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
     })[char]);
     const html = '<div class="radar-target-label">' +
-        '<div class="nl-head"><span class="nl-name">' + text(name) + '</span><span class="nl-type">' + text(type) + '</span></div>' +
-        '<div class="nl-head"><span>' + text(num) + '</span><span>' + text(speed) + '</span></div>' +
-        '<div class="nl-stats"><span>В ефірі</span><span>' + text(age) + '</span></div>' +
+        '<div class="nl-head"><span class="nl-name">' + text(emoji) + ' ' + text(name) + '</span><span class="nl-type">' + text(type) + '</span></div>' +
+        '<div class="nl-route">🎯 ' + text(translateUiText("Напрямок:")) + ' ' + text(target || translateUiText("Курс не зазначено")) + '</div>' +
+        '<div class="nl-head nl-meta"><span>⚡ ' + text(speed) + '</span><span>№' + text(num.replace(/^№/, "")) + '</span></div>' +
+        '<div class="nl-stats"><span class="nl-live">● ' + text(translateUiText("НА РАДАРІ")) + '</span><span>⏱ ' + text(age) + '</span></div>' +
         '</div>';
     return L.marker(latlng, { icon: L.divIcon({ className: "", html, iconSize: [0, 0], iconAnchor: [0, 0] }), interactive: false });
 }
@@ -3177,7 +3306,13 @@ function createLabelsFor(f) {
     f._numText = targetNumText(f);
     f._speedText = flyerSpeedLabel(f);
     f._ageText = flyerAgeLabel(f);
-    f.nameMarker = makeNameLabel(f.marker.getLatLng(), tpl.name, typeLabelFor(tpl), f._numText, f._speedText, f._ageText).addTo(map);
+    f._targetText = (f.ev.to && f.ev.to.name) || "";
+    f._nameText = tpl.name;
+    f._typeText = typeLabelFor(tpl);
+    f.nameMarker = makeNameLabel(
+        f.marker.getLatLng(), f._nameText, f._typeText, f._numText, f._speedText,
+        f._ageText, f._targetText, tpl.emoji || "✈️"
+    ).addTo(map);
 }
 function updateAllLabels() {
     flyers.forEach(clearLabelsFor);
@@ -3188,7 +3323,10 @@ setInterval(function () {
     if (!settings.showNameLabel) return;
     flyers.forEach(function (f) {
         if (!f || !f.marker || !f.nameMarker) return;
-        if (f._numText !== targetNumText(f) || f._speedText !== flyerSpeedLabel(f) || f._ageText !== flyerAgeLabel(f)) createLabelsFor(f);
+        const tpl = f.template || findTemplateByType(f.ev && f.ev.type);
+        if (f._numText !== targetNumText(f) || f._speedText !== flyerSpeedLabel(f) ||
+            f._ageText !== flyerAgeLabel(f) || f._targetText !== ((f.ev.to && f.ev.to.name) || "") ||
+            f._nameText !== tpl.name || f._typeText !== typeLabelFor(tpl)) createLabelsFor(f);
     });
 }, 400);
 function updateObjectMarkersPosition(obj) {
@@ -4181,6 +4319,173 @@ async function shareCurrentMapView() {
 }
 document.getElementById("shareViewBtn").addEventListener("click", shareCurrentMapView);
 document.getElementById("shareSettingsBtn").addEventListener("click", shareCurrentMapView);
+
+const mapSearchInput = document.getElementById("mapSearchInput");
+const mapSearchResults = document.getElementById("mapSearchResults");
+let mapSearchPlaces = MAP_SEARCH_CITIES.map((place, index) => ({
+    id: "city-" + index,
+    names: place.names,
+    aliases: place.aliases,
+    center: place.center,
+    bounds: null,
+    type: "city"
+}));
+let activeMapSearchIndex = -1;
+function normalizeMapSearchText(value) {
+    return String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        .toLocaleLowerCase().replace(/[’ʼ`]/g, "'").trim();
+}
+function refreshMapSearchPlaces() {
+    const regionFeatures = new Map();
+    if (occupiedData && Array.isArray(occupiedData.features)) {
+        for (const feature of occupiedData.features) {
+            const iso = String(feature.properties && feature.properties.shapeISO || "").toUpperCase();
+            if (iso && !regionFeatures.has(iso)) regionFeatures.set(iso, feature);
+        }
+    }
+    const regions = MAP_SEARCH_REGIONS.map(region => {
+        const feature = regionFeatures.get(region.iso);
+        let bounds = null;
+        if (feature) {
+            try {
+                const candidate = L.geoJSON(feature).getBounds();
+                if (candidate.isValid()) bounds = candidate;
+            } catch (error) {
+                console.warn("Could not read map-search region bounds:", region.iso, error);
+            }
+        }
+        return {
+            id: "region-" + region.iso,
+            names: region.names,
+            aliases: region.aliases,
+            center: MAP_SEARCH_REGION_CENTERS[region.iso],
+            bounds,
+            type: "region"
+        };
+    });
+    mapSearchPlaces = MAP_SEARCH_CITIES.map((place, index) => ({
+        id: "city-" + index,
+        names: place.names,
+        aliases: place.aliases,
+        center: place.center,
+        bounds: null,
+        type: "city"
+    })).concat(regions);
+    if (mapSearchInput && mapSearchInput.value.trim()) renderMapSearchResults(mapSearchInput.value);
+}
+function findMapSearchMatches(query) {
+    const needle = normalizeMapSearchText(query);
+    if (needle.length < 2) return [];
+    return mapSearchPlaces.map(place => {
+        const values = Object.values(place.names).concat(place.aliases);
+        const normalized = values.map(normalizeMapSearchText);
+        const score = normalized.reduce((best, value) => {
+            if (value === needle) return Math.max(best, 3);
+            if (value.startsWith(needle)) return Math.max(best, 2);
+            if (value.includes(needle)) return Math.max(best, 1);
+            return best;
+        }, 0);
+        return { place, score };
+    }).filter(result => result.score > 0)
+        .sort((a, b) => b.score - a.score ||
+            (a.place.type === b.place.type ? 0 : a.place.type === "city" ? -1 : 1) ||
+            (a.place.names[settings.language] || a.place.names.uk)
+                .localeCompare(b.place.names[settings.language] || b.place.names.uk, getInterfaceLocale()))
+        .slice(0, 8)
+        .map(result => result.place);
+}
+function closeMapSearchResults() {
+    mapSearchResults.hidden = true;
+    mapSearchInput.setAttribute("aria-expanded", "false");
+    mapSearchInput.removeAttribute("aria-activedescendant");
+    activeMapSearchIndex = -1;
+}
+function renderMapSearchResults(query) {
+    const places = findMapSearchMatches(query);
+    mapSearchResults.replaceChildren();
+    activeMapSearchIndex = -1;
+    if (normalizeMapSearchText(query).length < 2) {
+        closeMapSearchResults();
+        return;
+    }
+    if (!places.length) {
+        const empty = document.createElement("div");
+        empty.className = "map-search-empty";
+        empty.textContent = translateUiText("Нічого не знайдено");
+        empty.setAttribute("role", "option");
+        empty.setAttribute("aria-disabled", "true");
+        mapSearchResults.appendChild(empty);
+    } else {
+        places.forEach((place, index) => {
+            const option = document.createElement("button");
+            option.type = "button";
+            option.id = "mapSearchOption-" + index;
+            option.className = "map-search-option";
+            option.setAttribute("role", "option");
+            option.setAttribute("aria-selected", "false");
+            const name = document.createElement("span");
+            name.className = "map-search-option-name";
+            name.textContent = place.names[settings.language] || place.names.uk;
+            const type = document.createElement("span");
+            type.className = "map-search-option-type";
+            type.textContent = translateUiText(place.type === "city" ? "Місто" : "Область");
+            option.append(name, type);
+            option.addEventListener("click", () => selectMapSearchPlace(place));
+            mapSearchResults.appendChild(option);
+        });
+    }
+    mapSearchResults.hidden = false;
+    mapSearchInput.setAttribute("aria-expanded", "true");
+}
+function selectMapSearchPlace(place) {
+    mapSearchInput.value = place.names[settings.language] || place.names.uk;
+    closeMapSearchResults();
+    if (place.bounds && place.bounds.isValid()) {
+        map.flyToBounds(place.bounds, { padding: [48, 48], maxZoom: 9, duration: 0.8 });
+    } else {
+        map.flyTo(place.center, place.type === "city" ? 10 : 8, { duration: 0.8 });
+    }
+    mapSearchInput.blur();
+}
+function setActiveMapSearchOption(index) {
+    const options = mapSearchResults.querySelectorAll('[role="option"]:not([aria-disabled="true"])');
+    if (!options.length) return;
+    activeMapSearchIndex = (index + options.length) % options.length;
+    options.forEach((option, optionIndex) => {
+        const active = optionIndex === activeMapSearchIndex;
+        option.classList.toggle("active", active);
+        option.setAttribute("aria-selected", String(active));
+    });
+    mapSearchInput.setAttribute("aria-activedescendant", options[activeMapSearchIndex].id);
+    options[activeMapSearchIndex].scrollIntoView({ block: "nearest" });
+}
+mapSearchInput.addEventListener("input", () => renderMapSearchResults(mapSearchInput.value));
+mapSearchInput.addEventListener("keydown", event => {
+    if (event.key === "ArrowDown" && !mapSearchResults.hidden) {
+        event.preventDefault();
+        setActiveMapSearchOption(activeMapSearchIndex + 1);
+    } else if (event.key === "ArrowUp" && !mapSearchResults.hidden) {
+        event.preventDefault();
+        setActiveMapSearchOption(activeMapSearchIndex < 0
+            ? mapSearchResults.querySelectorAll('[role="option"]:not([aria-disabled="true"])').length - 1
+            : activeMapSearchIndex - 1);
+    } else if (event.key === "Enter" && !mapSearchResults.hidden) {
+        event.preventDefault();
+        const options = mapSearchResults.querySelectorAll(".map-search-option");
+        const option = options[activeMapSearchIndex] || options[0];
+        if (option) option.click();
+    } else if (event.key === "Escape" && !mapSearchResults.hidden) {
+        event.preventDefault();
+        closeMapSearchResults();
+    }
+});
+mapSearchInput.addEventListener("focus", () => {
+    if (mapSearchInput.value.trim().length >= 2) renderMapSearchResults(mapSearchInput.value);
+});
+document.addEventListener("click", event => {
+    if (!document.getElementById("mapSearch").contains(event.target)) closeMapSearchResults();
+});
+refreshMapSearchPlaces();
 
 let deferredInstallPrompt = null;
 const installAppButton = document.getElementById("installAppBtn");
