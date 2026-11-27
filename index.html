@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#171126">
-<title>Вартовий-Радар v7.2 — моніторинг повітряних загроз</title>
+<title>Вартовий-Радар v7.4 — моніторинг повітряних загроз</title>
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -852,7 +852,7 @@ html[data-theme="light"] .target-block-label { background:rgba(248,251,253,.94);
   <div class="brand">
     <span class="tb-ws" id="wsStatus" title="Зв'язок із сервером"></span>
     <span class="brand-name">Вартовий-Радар</span>
-    <span class="brand-sub">v7.3 · повітряні загрози</span>
+    <span class="brand-sub">v7.4 · повітряні загрози</span>
   </div>
   <div class="tb-stat"><span class="lbl">цілей</span><span class="val" id="tbTargets">0</span></div>
   <div class="tb-clock"><span class="t2">Київ</span><span class="t1" id="tbClock">--:--:--</span></div>
@@ -944,6 +944,10 @@ html[data-theme="light"] .target-block-label { background:rgba(248,251,253,.94);
     <p class="note">Клавіатура: Tab для переходу по елементах; сфокусуй карту, щоб переміщати її стрілками та змінювати масштаб клавішами +/−. Escape закриває панель.</p>
 
     <div class="group-title">Журнал оновлень</div>
+    <article class="release-note">
+      <div class="release-note-heading"><strong>Версія 7.4</strong><time datetime="2026-11-27">27.11.2026</time></div>
+      <p>На PNG-скрині додано нижню легенду позначень карти та типів загроз.</p>
+    </article>
     <article class="release-note">
       <div class="release-note-heading"><strong>Версія 7.3</strong><time datetime="2026-11-27">27.11.2026</time></div>
       <p>Додано видимі кнопки PNG-скринів з водяним знаком, виділення області, повноекранний режим і повернення до всієї України.</p>
@@ -5652,7 +5656,8 @@ function initAdminSpawnUI() {
         toast("Рисую PNG…", 4000);
         try {
             const dpr = window.devicePixelRatio || 1;
-            const totalH = R.h;
+            const legendH = Math.max(82, Math.min(112, R.h * 0.14));
+            const totalH = R.h + legendH;
 
             let S = Math.max(dpr, 2);
             S = Math.min(S, 8000 / R.w, 8000 / totalH);
@@ -5833,7 +5838,87 @@ function initAdminSpawnUI() {
             }
             ctx.restore(); // снять клип карты
 
-            // 7) скопировать в буфер обмена (если не вышло — скачать файл)
+            // 7) нижняя легенда позначений экрана
+            {
+                ctx.setTransform(S, 0, 0, S, -R.x * S, -R.y * S);
+                const footerY = R.y + R.h;
+                const dark = currentTheme === "dark";
+                ctx.fillStyle = dark ? "#111827" : "#f8fafc";
+                ctx.fillRect(R.x, footerY, R.w, legendH);
+                ctx.fillStyle = dark ? "rgba(167,139,250,.75)" : "rgba(124,58,237,.75)";
+                ctx.fillRect(R.x, footerY, R.w, 1);
+
+                const title = translateUiText ? translateUiText("Легенда позначень") : "Легенда позначень";
+                ctx.textAlign = "left";
+                ctx.textBaseline = "middle";
+                ctx.fillStyle = dark ? "#e7f0f7" : "#172932";
+                ctx.font = "800 " + Math.round(Math.max(11, Math.min(14, R.w * 0.012))) + "px Inter, system-ui, sans-serif";
+                ctx.fillText(title, R.x + 14, footerY + 16);
+
+                const items = [
+                    { type: "object", label: translateUiText ? translateUiText("Об'єкт") : "Об'єкт", color: currentObjColorHex() },
+                    { type: "lost", label: translateUiText ? translateUiText("Втрачене позначення") : "Втрачене позначення", color: "#9aa4ae" },
+                    { type: "zone", label: translateUiText ? translateUiText("Зона загрози") : "Зона загрози", color: "#ff667f" },
+                    { type: "red", label: translateUiText ? translateUiText("Червона тривога") : "Червона тривога", color: "#ef4444" },
+                    { type: "yellow", label: translateUiText ? translateUiText("Жовта тривога") : "Жовта тривога", color: "#f4c15d" },
+                    { type: "wm", label: translateUiText ? translateUiText("Водяний знак") : "Водяний знак", color: dark ? "#cbd5e1" : "#64748b" }
+                ];
+                const cols = R.w >= 720 ? 3 : 2;
+                const gapX = 18;
+                const startX = R.x + 14;
+                const colW = (R.w - 28 - gapX * (cols - 1)) / cols;
+                const itemYStart = footerY + 38;
+                const itemH = (legendH - 48) / Math.ceil(items.length / cols);
+
+                ctx.font = "600 " + Math.round(Math.max(9, Math.min(12, R.w * 0.011))) + "px Inter, system-ui, sans-serif";
+                ctx.textAlign = "left";
+                ctx.textBaseline = "middle";
+                items.forEach(function (item, i) {
+                    const col = i % cols;
+                    const row = Math.floor(i / cols);
+                    const x = startX + col * (colW + gapX);
+                    const y = itemYStart + row * itemH + itemH / 2;
+                    ctx.save();
+                    if (item.type === "lost") {
+                        ctx.beginPath(); ctx.arc(x + 7, y, 7, 0, Math.PI * 2);
+                        ctx.fillStyle = "rgba(22,27,34,.82)"; ctx.fill();
+                        ctx.strokeStyle = item.color; ctx.lineWidth = 2; ctx.stroke();
+                        ctx.fillStyle = item.color; ctx.font = "800 11px Inter, sans-serif";
+                        ctx.textAlign = "center"; ctx.fillText("×", x + 7, y + 0.5);
+                        ctx.textAlign = "left";
+                    } else if (item.type === "zone") {
+                        ctx.translate(x + 7, y);
+                        ctx.rotate(-Math.PI / 4);
+                        ctx.fillStyle = "rgba(255,102,127,.18)";
+                        ctx.fillRect(-7, -7, 14, 14);
+                        ctx.strokeStyle = item.color; ctx.lineWidth = 2; ctx.strokeRect(-7, -7, 14, 14);
+                    } else if (item.type === "wm") {
+                        ctx.globalAlpha = 0.9;
+                        ctx.fillStyle = item.color;
+                        ctx.font = "800 10px Inter, system-ui, sans-serif";
+                        ctx.textAlign = "center";
+                        ctx.fillText("W", x + 7, y);
+                        ctx.textAlign = "left";
+                    } else {
+                        ctx.beginPath();
+                        ctx.arc(x + 7, y, item.type === "object" ? 7 : 6, 0, Math.PI * 2);
+                        ctx.fillStyle = item.color;
+                        ctx.globalAlpha = item.type === "object" ? 0.95 : 0.82;
+                        ctx.fill();
+                        ctx.strokeStyle = dark ? "#fff" : "#172932";
+                        ctx.lineWidth = 1;
+                        ctx.stroke();
+                        ctx.globalAlpha = 1;
+                    }
+                    ctx.fillStyle = dark ? "#cbd5e1" : "#334155";
+                    ctx.textAlign = "left";
+                    ctx.textBaseline = "middle";
+                    ctx.fillText(item.label, x + 20, y);
+                });
+            }
+            ctx.restore();
+
+            // 8) скопировать в буфер обмена (если не вышло — скачать файл)
             cv.toBlob(async function (blob) {
                 if (!blob) { toast("Не удалось собрать PNG (карта заблокирована CORS)", 4000); return; }
                 try {
