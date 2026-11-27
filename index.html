@@ -478,18 +478,18 @@ html[data-theme="light"] .leaflet-bar a:hover { background:rgba(248,251,253,.95)
 .radar-target-label {
   position:absolute;
   display:grid;
-  gap:5px;
-  min-width:138px;
-  max-width:220px;
-  padding:8px 10px;
+  gap:4px;
+  min-width:118px;
+  max-width:190px;
+  padding:6px 8px;
   transform:translate(20px,-50%);
   color:var(--txt);
   background:rgba(8,17,30,.9);
   border:1px solid rgba(72,214,195,.32);
   border-left:3px solid var(--accent);
-  border-radius:10px;
-  box-shadow:0 8px 22px rgba(0,0,0,.32);
-  font:500 10px/1.35 var(--sans);
+  border-radius:8px;
+  box-shadow:0 7px 18px rgba(0,0,0,.3);
+  font:500 9px/1.3 var(--sans);
   white-space:nowrap;
   backdrop-filter:blur(10px);
   pointer-events:none;
@@ -500,36 +500,36 @@ html[data-theme="light"] .radar-target-label { background:rgba(248,251,253,.94);
   display:flex;
   align-items:center;
   justify-content:space-between;
-  gap:10px;
+  gap:7px;
 }
 .radar-target-label .nl-name {
   overflow:hidden;
   color:var(--txt);
-  font-size:11px;
+  font-size:10px;
   font-weight:700;
   text-overflow:ellipsis;
 }
 .radar-target-label .nl-type {
   flex:none;
-  padding:2px 6px;
+  padding:1px 5px;
   color:var(--accent);
   background:rgba(72,214,195,.1);
   border:1px solid rgba(72,214,195,.2);
-  border-radius:5px;
-  font-size:9px;
+  border-radius:4px;
+  font-size:8px;
   font-weight:700;
 }
 .radar-target-label .nl-stats {
-  padding-top:4px;
+  padding-top:3px;
   color:var(--txt-2);
   border-top:1px solid var(--border);
-  font:500 9px var(--mono);
+  font:500 8px var(--mono);
 }
 .target-block-label {
   display:grid;
-  gap:5px;
-  min-width:138px;
-  padding:8px 10px;
+  gap:4px;
+  min-width:118px;
+  padding:6px 8px;
   background:rgba(8,17,30,.9);
   border:1px solid var(--border-strong);
   border-left:3px solid var(--accent);
@@ -544,12 +544,12 @@ html[data-theme="light"] .target-block-label { background:rgba(248,251,253,.94);
 .target-block-label .tbl-type {
   display:block;
   color:var(--txt);
-  font:600 10px/1.4 var(--sans);
+  font:600 9px/1.35 var(--sans);
   letter-spacing:0;
   text-shadow:none;
 }
-.target-block-label .tbl-num { color:var(--accent); font-size:11px; }
-.target-block-label .tbl-type { color:var(--txt-2); font:500 9px var(--mono); }
+.target-block-label .tbl-num { color:var(--accent); font-size:10px; }
+.target-block-label .tbl-type { color:var(--txt-2); font:500 8px var(--mono); }
 .target-popup {
   min-width:210px;
   padding:2px;
@@ -571,6 +571,30 @@ html[data-theme="light"] .target-block-label { background:rgba(248,251,253,.94);
   font-size:11px;
 }
 .target-popup .tp-row .val { text-align:right; }
+#alertLegend {
+  position:fixed;
+  left:14px;
+  bottom:18px;
+  z-index:1000;
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:8px 11px;
+  color:var(--txt);
+  background:rgba(8,17,30,.88);
+  border:1px solid var(--border-strong);
+  border-radius:10px;
+  box-shadow:var(--shadow);
+  font:600 10px var(--sans);
+  pointer-events:none;
+  backdrop-filter:blur(10px);
+}
+#alertLegend[hidden] { display:none; }
+html[data-theme="light"] #alertLegend { background:rgba(248,251,253,.94); }
+#alertLegend .alert-legend-item { display:flex; align-items:center; gap:6px; white-space:nowrap; }
+#alertLegend .alert-legend-dot { width:9px; height:9px; border-radius:50%; }
+#alertLegend .alert-legend-dot.yellow { background:#ffd43b; box-shadow:0 0 8px rgba(255,212,59,.55); }
+#alertLegend .alert-legend-dot.red { background:#ff304f; box-shadow:0 0 8px rgba(255,48,79,.5); }
 
 @media (max-width:640px) {
   :root { --bar-h:52px; }
@@ -586,12 +610,17 @@ html[data-theme="light"] .target-block-label { background:rgba(248,251,253,.94);
   .panel { top:8px; bottom:8px; max-width:calc(100vw - 20px); }
   #settingsPanel { left:10px; transform:translateX(calc(-100% - 16px)); }
   .panel-body { padding:6px 14px 20px; }
+  #alertLegend { left:10px; bottom:12px; gap:9px; padding:7px 9px; font-size:9px; }
 }
 </style>
 </head>
 <body>
 
 <div id="map"></div>
+<div id="alertLegend" role="img" aria-label="Жовтий — БпЛА, червоний — ракетна загроза">
+  <span class="alert-legend-item"><i class="alert-legend-dot yellow"></i>БпЛА</span>
+  <span class="alert-legend-item"><i class="alert-legend-dot red"></i>Ракетна</span>
+</div>
 <div id="centerCrosshair" aria-hidden="true"><div class="ch-h"></div><div class="ch-v"></div></div>
 <div id="jsError"></div>
 
@@ -1700,7 +1729,8 @@ function normalizeAirAlertPayload(raw) {
     if (raw.states && typeof raw.states === 'object') {
         for (const [name, v] of Object.entries(raw.states)) {
             if (v && (v.alertnow === true || v.alertnow === 'true' || v.alert === true)) {
-                out.regions.push({ regionName: name, level: 'red', activeAlerts: [{ type: 'AIR' }] });
+                const level = lvl(v, [v]);
+                out.regions.push({ regionName: name, level, activeAlerts: [v] });
             }
         }
         return out;
@@ -1750,6 +1780,7 @@ async function refreshAirAlertRegions() {
 function toggleAirAlertVisibility(enabled) {
     settings.showAirAlerts = enabled;
     const el = document.getElementById('toggleAirAlerts');
+    document.getElementById('alertLegend').hidden = !enabled;
     el.classList.toggle('on', enabled);
     el.setAttribute('aria-checked', String(enabled));
     renderOccupiedRegions();
@@ -1768,6 +1799,7 @@ function toggleAirAlertVisibility(enabled) {
     saveSettings();
 }
 const airAlertSwitch = document.getElementById('toggleAirAlerts');
+document.getElementById('alertLegend').hidden = !settings.showAirAlerts;
 airAlertSwitch.classList.toggle('on', settings.showAirAlerts);
 airAlertSwitch.setAttribute('aria-checked', String(settings.showAirAlerts));
 airAlertSwitch.onclick = () => toggleAirAlertVisibility(!settings.showAirAlerts);
