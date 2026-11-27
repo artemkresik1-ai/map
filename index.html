@@ -1775,8 +1775,8 @@ function renderBorder() {
     borderLayer.clearLayers(); maskLayer.clearLayers();
     if (ukraineBorderData) {
         L.geoJSON(ukraineBorderData, { style: {
-            color: currentMapKey === "osm_atlas" ? "#6b99c8" : (currentMapKey === "google_sat" ? "#c45a5a" : "#8a9099"),
-            weight: 1.2, opacity: 0.85, fill: false, interactive: false
+            color: "#1b2935",
+            weight: 2.2, opacity: 0.95, fill: false, interactive: false
         } }).addTo(borderLayer);
     }
     renderVisibleMask();
