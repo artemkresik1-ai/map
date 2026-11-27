@@ -39,11 +39,11 @@ html, body { width:100%; height:100%; overflow:hidden; font:13px/1.4 var(--sans)
 #map { position:fixed; inset:0; z-index:1; }
 #map::after {
   content:""; position:absolute; inset:0; z-index:250; pointer-events:none;
-  background-image:radial-gradient(ellipse at 50% 45%, transparent 42%, var(--map-texture) 100%);
-  background-size:100% 100%; mix-blend-mode:soft-light;
+  background-image:radial-gradient(ellipse at 50% 45%, transparent 35%, var(--map-texture) 100%),repeating-linear-gradient(135deg, transparent 0 12px, var(--map-texture) 12px 13px);
+  background-size:100% 100%,18px 18px; mix-blend-mode:soft-light;
 }
-#map .leaflet-tile-pane { filter:none; }
-html[data-theme="light"] #map .leaflet-tile-pane { filter:saturate(.88) contrast(1.02); }
+#map .leaflet-tile-pane { filter:saturate(.84) contrast(1.04) brightness(.96); }
+html[data-theme="light"] #map .leaflet-tile-pane { filter:saturate(.94) contrast(1.01) brightness(1.01); }
 button { font-family:inherit; cursor:pointer; }
 input, select { font-family:inherit; }
 #topbar :focus-visible, #floatingBtns :focus-visible, .panel :focus-visible, #disclaimer :focus-visible, #restoreUiBtn:focus-visible, #showTopbarBtn:focus-visible, #map:focus-visible { outline:3px solid var(--accent); outline-offset:3px; }
@@ -1589,8 +1589,7 @@ function findTemplateByType(type) {
 }
 
 const RASTER_TILES = {
-    dark: { url: "https://basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", attr: "© OpenStreetMap contributors © CARTO", maxZoom: 19 },
-    light: { url: "https://basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png", attr: "© OpenStreetMap contributors © CARTO", maxZoom: 19 }
+    osm: { url: "https://tile.openstreetmap.org/{z}/{x}/{y}.png", attr: "© OpenStreetMap contributors", maxZoom: 19 }
 };
 
 // ═══ ПЛАВНЫЕ МАРКЕРЫ: Leaflet по умолчанию округляет позицию маркера до целого пикселя
@@ -2978,7 +2977,7 @@ function setMapLayer() {
     try {
         if (currentTileLayer) { map.removeLayer(currentTileLayer); currentTileLayer = null; }
         if (currentVectorLayer) { map.removeLayer(currentVectorLayer); currentVectorLayer = null; }
-        const tiles = RASTER_TILES[currentTheme] || RASTER_TILES.dark;
+        const tiles = RASTER_TILES.osm;
         currentTileLayer = L.tileLayer(tiles.url, {
             maxZoom: tiles.maxZoom,
             crossOrigin: true,
@@ -3011,8 +3010,8 @@ function renderBorder() {
     borderLayer.clearLayers(); maskLayer.clearLayers();
     if (ukraineBorderData) {
         L.geoJSON(ukraineBorderData, { style: {
-            color: currentTheme === "light" ? "#126b70" : "#55d9c4",
-            weight: 2.4, opacity: 0.92, fill: false, interactive: false
+            color: "#1b2935",
+            weight: 2.2, opacity: 0.95, fill: false, interactive: false
         } }).addTo(borderLayer);
     }
     renderVisibleMask();
@@ -5480,8 +5479,8 @@ function initAdminSpawnUI() {
                         ctx.filter = "brightness(0.52) contrast(1.12) saturate(0.7)";
                     } else if (currentMapKey === "osm") {
                         ctx.filter = currentTheme === "light"
-                            ? "saturate(.88) contrast(1.02)"
-                            : "none";
+                            ? "saturate(.94) contrast(1.01) brightness(1.01)"
+                            : "saturate(.84) contrast(1.04) brightness(.96)";
                     }
                     document.querySelectorAll("#map .leaflet-tile-pane img.leaflet-tile").forEach(function (im) {
                         if (!im.complete || !im.naturalWidth) return;
