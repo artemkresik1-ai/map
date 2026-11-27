@@ -653,6 +653,8 @@ html[data-theme="light"] #alertLegend { background:rgba(248,251,253,.94); }
     <div class="group-title">Відображення</div>
     <div class="row"><label>Інформація про об'єкти</label><div id="toggleNameLabel" class="switch"></div></div>
     <div class="row"><label>Відображення повітряних тривог</label><div id="toggleAirAlerts" class="switch" role="switch" aria-checked="false" tabindex="0"></div></div>
+    <div class="row"><label for="toggleAlertSound">Звук нової тривоги</label><div id="toggleAlertSound" class="switch" role="switch" aria-checked="false" tabindex="0"></div></div>
+    <p class="note" id="alertSoundStatus" aria-live="polite">Короткий сигнал при появі нової тривоги. Не замінює офіційні сповіщення.</p>
     <div class="row"><label>Світіння об'єктів</label><div id="toggleGlow" class="switch" role="switch" aria-checked="false" tabindex="0"></div></div>
     <div class="row"><label>Перехрестя в центрі екрана</label><div id="toggleCrosshair" class="switch" role="switch" aria-checked="false" tabindex="0"></div></div>
     <div class="row" id="crosshairOpacityRow"><label>Прозорість перехрестя</label><input type="range" id="crosshairOpacityRange" class="rng" min="15" max="100" value="70" step="5"></div>
@@ -742,6 +744,7 @@ const defaultSettings = {
     objColor: "blue",
     showThreatZones: true,
     showAirAlerts: true,
+    alertSound: false,
     glow: false,
     showCrosshair: false,
     crosshairOpacity: 0.7,
@@ -767,6 +770,7 @@ function saveSettings() {
             showNameLabel: settings.showNameLabel,
             showThreatZones: settings.showThreatZones,
             showAirAlerts: settings.showAirAlerts,
+            alertSound: settings.alertSound,
             glow: settings.glow,
             showCrosshair: settings.showCrosshair,
             crosshairOpacity: settings.crosshairOpacity,
@@ -1647,6 +1651,63 @@ function renderAirAlertRegions() {
 }
 let airAlertFetchInProgress = false;
 let lastLiveAirAlerts = null;
+let previousAirAlertKeys = null;
+let alertAudioContext = null;
+let alertSoundErrorShown = false;
+function hasNewAirAlert(previous, next) {
+    return previous !== null && Array.from(next).some(key => !previous.has(key));
+}
+function setAlertSoundStatus(message) {
+    const status = document.getElementById('alertSoundStatus');
+    if (status) status.textContent = message;
+}
+function getAlertAudioContext() {
+    const AudioContextConstructor = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextConstructor) return null;
+    if (!alertAudioContext) alertAudioContext = new AudioContextConstructor();
+    return alertAudioContext;
+}
+function playAirAlertTone() {
+    if (!settings.alertSound) return;
+    try {
+        const context = getAlertAudioContext();
+        if (!context) {
+            setAlertSoundStatus('Цей браузер не підтримує звукові сповіщення.');
+            return;
+        }
+        if (context.state === 'suspended') {
+            context.resume().then(() => {
+                if (settings.alertSound) playAirAlertTone();
+            }).catch(error => {
+                console.info('Air-alert audio needs user interaction:', error);
+                setAlertSoundStatus('Натисніть перемикач звуку, щоб дозволити відтворення.');
+            });
+            return;
+        }
+        if (context.state !== 'running') return;
+        const now = alertAudioContext.currentTime;
+        [660, 880].forEach((frequency, index) => {
+            const start = now + index * 0.18;
+            const oscillator = context.createOscillator();
+            const gain = context.createGain();
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(frequency, start);
+            gain.gain.setValueAtTime(0.0001, start);
+            gain.gain.exponentialRampToValueAtTime(0.045, start + 0.025);
+            gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.15);
+            oscillator.connect(gain);
+            gain.connect(context.destination);
+            oscillator.start(start);
+            oscillator.stop(start + 0.16);
+        });
+    } catch (error) {
+        console.warn('Air-alert sound playback failed:', error);
+        if (!alertSoundErrorShown) {
+            alertSoundErrorShown = true;
+            setAlertSoundStatus('Не вдалося відтворити звук тривоги.');
+        }
+    }
+}
 function applyAirAlertData(data) {
     // Невалідна відповідь / помилка мережі — НЕ очищаємо вже показані тривоги
     if (!data || !Array.isArray(data.regions)) return false;
@@ -1671,11 +1732,20 @@ function applyAirAlertData(data) {
             raion: airAlertRaionName(hromada.raionName), level: hromada.level });
         updatedHromady.set(name, variants);
     }
+    const nextAlertKeys = new Set([
+        ...Array.from(updated.keys(), key => 'region:' + key),
+        ...Array.from(updatedDistricts.keys(), key => 'district:' + key),
+        ...Array.from(updatedHromady.entries()).flatMap(([name, variants]) =>
+            variants.map(item => 'hromada:' + name + ':' + item.oblast + ':' + item.raion))
+    ]);
+    const hasNewAlert = hasNewAirAlert(previousAirAlertKeys, nextAlertKeys);
+    previousAirAlertKeys = nextAlertKeys;
     airAlertIso = updated;
     airAlertDistrictNames = updatedDistricts;
     airAlertHromadaNames = updatedHromady;
     lastLiveAirAlerts = data;
     renderAirAlertRegions();
+    if (hasNewAlert) playAirAlertTone();
     if (updatedDistricts.size && !airAlertRaionsData) loadAirAlertRaions();
     if (updatedHromady.size && !airAlertHromadyData) loadAirAlertHromady();
     return true;
@@ -1804,6 +1874,58 @@ airAlertSwitch.classList.toggle('on', settings.showAirAlerts);
 airAlertSwitch.setAttribute('aria-checked', String(settings.showAirAlerts));
 airAlertSwitch.onclick = () => toggleAirAlertVisibility(!settings.showAirAlerts);
 airAlertSwitch.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleAirAlertVisibility(!settings.showAirAlerts); } };
+const alertSoundSwitch = document.getElementById('toggleAlertSound');
+function syncAlertSoundSwitch() {
+    alertSoundSwitch.classList.toggle('on', settings.alertSound);
+    alertSoundSwitch.setAttribute('aria-checked', String(settings.alertSound));
+}
+async function setAlertSoundEnabled(enabled) {
+    if (!enabled) {
+        settings.alertSound = false;
+        syncAlertSoundSwitch();
+        setAlertSoundStatus('Звукові сповіщення вимкнено.');
+        saveSettings();
+        return;
+    }
+    try {
+        const context = getAlertAudioContext();
+        if (!context) {
+            settings.alertSound = false;
+            syncAlertSoundSwitch();
+            setAlertSoundStatus('Цей браузер не підтримує звукові сповіщення.');
+            saveSettings();
+            return;
+        }
+        if (context.state === 'suspended') await context.resume();
+        if (context.state !== 'running') throw new Error('Audio context is not running');
+        settings.alertSound = true;
+        alertSoundErrorShown = false;
+        syncAlertSoundSwitch();
+        saveSettings();
+        setAlertSoundStatus('Звук нових тривог увімкнено.');
+    } catch (error) {
+        console.warn('Air-alert sound could not be enabled:', error);
+        settings.alertSound = false;
+        syncAlertSoundSwitch();
+        saveSettings();
+        setAlertSoundStatus('Не вдалося увімкнути звук. Перевірте налаштування браузера.');
+    }
+}
+syncAlertSoundSwitch();
+function toggleAlertSound() {
+    if (settings.alertSound && (!alertAudioContext || alertAudioContext.state !== 'running')) {
+        setAlertSoundEnabled(true);
+    } else {
+        setAlertSoundEnabled(!settings.alertSound);
+    }
+}
+alertSoundSwitch.onclick = toggleAlertSound;
+alertSoundSwitch.onkeydown = (e) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        toggleAlertSound();
+    }
+};
 const glowSwitch = document.getElementById('toggleGlow');
 function setGlowEnabled(enabled) {
     settings.glow = !!enabled;
