@@ -475,6 +475,102 @@ html[data-theme="light"] .leaflet-bar a:hover { background:rgba(248,251,253,.95)
   backdrop-filter:blur(8px);
 }
 .leaflet-control-attribution a { color:var(--accent) !important; }
+.radar-target-label {
+  position:absolute;
+  display:grid;
+  gap:5px;
+  min-width:138px;
+  max-width:220px;
+  padding:8px 10px;
+  transform:translate(20px,-50%);
+  color:var(--txt);
+  background:rgba(8,17,30,.9);
+  border:1px solid rgba(72,214,195,.32);
+  border-left:3px solid var(--accent);
+  border-radius:10px;
+  box-shadow:0 8px 22px rgba(0,0,0,.32);
+  font:500 10px/1.35 var(--sans);
+  white-space:nowrap;
+  backdrop-filter:blur(10px);
+  pointer-events:none;
+}
+html[data-theme="light"] .radar-target-label { background:rgba(248,251,253,.94); }
+.radar-target-label .nl-head,
+.radar-target-label .nl-stats {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+}
+.radar-target-label .nl-name {
+  overflow:hidden;
+  color:var(--txt);
+  font-size:11px;
+  font-weight:700;
+  text-overflow:ellipsis;
+}
+.radar-target-label .nl-type {
+  flex:none;
+  padding:2px 6px;
+  color:var(--accent);
+  background:rgba(72,214,195,.1);
+  border:1px solid rgba(72,214,195,.2);
+  border-radius:5px;
+  font-size:9px;
+  font-weight:700;
+}
+.radar-target-label .nl-stats {
+  padding-top:4px;
+  color:var(--txt-2);
+  border-top:1px solid var(--border);
+  font:500 9px var(--mono);
+}
+.target-block-label {
+  display:grid;
+  gap:5px;
+  min-width:138px;
+  padding:8px 10px;
+  background:rgba(8,17,30,.9);
+  border:1px solid var(--border-strong);
+  border-left:3px solid var(--accent);
+  border-radius:10px;
+  box-shadow:var(--shadow);
+  white-space:normal;
+  backdrop-filter:blur(10px);
+}
+html[data-theme="light"] .target-block-label { background:rgba(248,251,253,.94); }
+.target-block-label .tbl-num,
+.target-block-label .tbl-code,
+.target-block-label .tbl-type {
+  display:block;
+  color:var(--txt);
+  font:600 10px/1.4 var(--sans);
+  letter-spacing:0;
+  text-shadow:none;
+}
+.target-block-label .tbl-num { color:var(--accent); font-size:11px; }
+.target-block-label .tbl-type { color:var(--txt-2); font:500 9px var(--mono); }
+.target-popup {
+  min-width:210px;
+  padding:2px;
+  font:12px/1.5 var(--sans);
+}
+.target-popup .tp-title {
+  margin-bottom:9px;
+  padding-bottom:8px;
+  color:var(--accent);
+  border-bottom:1px solid var(--border);
+  font-size:14px;
+  font-weight:700;
+}
+.target-popup .tp-row {
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+  margin:5px 0;
+  font-size:11px;
+}
+.target-popup .tp-row .val { text-align:right; }
 
 @media (max-width:640px) {
   :root { --bar-h:52px; }
@@ -1208,8 +1304,14 @@ function airAlertMerge(target, key, level) {
 }
 function airAlertStyle(level) {
     const red = level === 'red';
-    return { color: red ? '#c8514e' : '#d9a923', weight: 1, opacity: 0.75,
-        fillColor: red ? '#ec8179' : '#ffcc32', fillOpacity: 0.32, interactive: false };
+    return {
+        color: red ? '#d21f3c' : '#a66a00',
+        weight: red ? 2 : 1.8,
+        opacity: 0.95,
+        fillColor: red ? '#ff304f' : '#ffd43b',
+        fillOpacity: red ? 0.42 : 0.38,
+        interactive: false
+    };
 }
 async function loadAirAlertRaions() {
     if (airAlertRaionsData) return;
@@ -2097,8 +2199,15 @@ function flyerAgeLabel(f) {
     return String(m).padStart(2, "0") + ":" + String(s).padStart(2, "0");
 }
 function makeNameLabel(latlng, name, type, num, speed, age) {
-    const row = function (t) { return '<div class="nl-row">' + t + '</div>'; };
-    return L.marker(latlng, { icon: L.divIcon({ className: "", html: '<div class="radar-target-label" style="position:absolute;color:' + currentLabelColor() + ';font:normal 12px VT323,monospace;white-space:nowrap;line-height:11px;transform:translate(20px,-22px);text-shadow:none;">' + row(name) + row(type) + row(num) + row(speed) + row(age) + '</div>', iconSize: [0, 0], iconAnchor: [0, 0] }), interactive: false });
+    const text = value => String(value ?? '').replace(/[&<>"']/g, char => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    })[char]);
+    const html = '<div class="radar-target-label">' +
+        '<div class="nl-head"><span class="nl-name">' + text(name) + '</span><span class="nl-type">' + text(type) + '</span></div>' +
+        '<div class="nl-head"><span>' + text(num) + '</span><span>' + text(speed) + '</span></div>' +
+        '<div class="nl-stats"><span>В ефірі</span><span>' + text(age) + '</span></div>' +
+        '</div>';
+    return L.marker(latlng, { icon: L.divIcon({ className: "", html, iconSize: [0, 0], iconAnchor: [0, 0] }), interactive: false });
 }
 function createLabelsFor(f) {
     if (!f || !f.marker) return;
