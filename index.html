@@ -664,7 +664,7 @@ html[data-theme="light"] .radar-target-label { background:rgba(248,251,253,.94);
 .radar-target-label .nl-name {
   overflow:hidden;
   color:var(--txt);
-  font-size:10px;
+  font-size:12px;
   font-weight:700;
   text-overflow:ellipsis;
 }
@@ -3124,7 +3124,7 @@ function objectSpriteCssFilter() {
 function getObjectIconSizePx() {
     const scale = Number(settings.objectSize);
     const s = (Number.isFinite(scale) && scale > 0) ? scale : 1;
-    return Math.max(18, Math.round(34 * s));
+    return Math.max(18, Math.round(32 * s));
 }
 function getTemplateSpriteSize(tpl) {
     const base = getObjectIconSizePx();
@@ -5547,7 +5547,7 @@ function initAdminSpawnUI() {
 
             // 5) объекты (иконки с поворотом + чёрный контур, как на карте)
             const color = currentObjColorHex();
-            const ICON = 34;
+            const ICON = getObjectIconSizePx();
             // Толщина контура в экранных px (с учётом scale экспорта)
             const outlinePx = 1;
             const outlineOffsets = [
