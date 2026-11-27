@@ -3,7 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#0b1220">
 <title>Вартовий-Радар v6.0 — моніторинг повітряних загроз</title>
+<link rel="manifest" href="/manifest.webmanifest">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -287,6 +289,24 @@ html[data-theme="light"] .alert-summary-level.yellow { color:#815400; }
 }
 .legend-lost b, .legend-threat-zone b { color:var(--txt); }
 
+/* Оновлена навігація та швидкі налаштування */
+#topbar { background-color:color-mix(in srgb, var(--bg) 94%, var(--accent)); backdrop-filter:blur(14px); }
+.panel { background-color:color-mix(in srgb, var(--bg) 96%, var(--accent)); backdrop-filter:blur(16px); }
+.settings-quick-actions { display:grid; grid-template-columns:1fr 1fr; gap:8px; padding:12px 0 2px; }
+.settings-quick-actions .sel { height:34px; font-size:11px; }
+.app-notice {
+  position:fixed; left:50%; bottom:22px; z-index:12000; max-width:min(440px,calc(100vw - 32px));
+  padding:10px 15px; color:var(--txt); background:var(--bg-2); border:1px solid var(--border-strong);
+  border-radius:var(--radius-sm); box-shadow:var(--shadow); opacity:0; transform:translate(-50%,10px);
+  pointer-events:none; transition:opacity .18s,transform .18s;
+}
+.app-notice.visible { opacity:1; transform:translate(-50%,0); }
+.offline-banner {
+  position:fixed; top:calc(var(--bar-h) + 10px); left:50%; z-index:1100; padding:7px 12px;
+  color:#fff; background:#9e2637; border-radius:8px; font:600 11px var(--sans);
+  transform:translateX(-50%); box-shadow:var(--shadow);
+}
+.offline-banner[hidden] { display:none; }
 @media (max-width:640px) {
   .brand-sub, .tb-clock .t2, .tb-hide { display:none; }
   #topbar > * { padding:0 10px; }
@@ -754,6 +774,8 @@ html[data-theme="light"] .target-block-label { background:rgba(248,251,253,.94);
 <div id="map"></div>
 <div id="centerCrosshair" aria-hidden="true"><div class="ch-h"></div><div class="ch-v"></div></div>
 <div id="jsError"></div>
+<div id="offlineBanner" class="offline-banner" role="status" hidden>Офлайн — доступні збережені файли, плитки карти можуть не завантажитись</div>
+<div id="appNotice" class="app-notice" role="status" aria-live="polite"></div>
 
 <header id="topbar">
   <div class="brand">
@@ -780,12 +802,24 @@ html[data-theme="light"] .target-block-label { background:rgba(248,251,253,.94);
   <button class="fbtn" id="toggleUiBtn" title="Сховати інтерфейс" aria-label="Сховати інтерфейс">
     <svg width="18" height="18" viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
   </button>
+  <button class="fbtn" id="shareViewBtn" title="Поділитися виглядом карти" aria-label="Поділитися виглядом карти">
+    <svg width="18" height="18" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.7 10.7 6.6-4.4m-6.6 7 6.6 4.4"/></svg>
+  </button>
 </nav>
 <button id="restoreUiBtn">Повернути інтерфейс</button>
 
 <aside id="settingsPanel" class="panel" aria-label="Налаштування" aria-hidden="true" inert>
   <div class="panel-header"><h2>Налаштування</h2><button class="panel-close" id="settingsClose" aria-label="Закрити">✕</button></div>
   <div class="panel-body">
+
+    <div class="group-title">Персоналізація</div>
+    <div class="row"><label for="viewPreset">Пресет карти</label><select id="viewPreset" class="sel"><option value="standard">Стандартний</option><option value="minimal">Мінімалістичний</option><option value="alerts">Фокус на тривогах</option></select></div>
+    <div class="row"><label for="languageSelect">Мова інтерфейсу</label><select id="languageSelect" class="sel"><option value="uk">Українська</option><option value="ru">Русский</option><option value="en">English</option></select></div>
+    <div class="settings-quick-actions">
+      <button id="installAppBtn" type="button" class="sel" hidden>Встановити застосунок</button>
+      <button id="shareSettingsBtn" type="button" class="sel">Поділитися картою</button>
+    </div>
+    <p class="note">Застосунок можна встановити з меню браузера. Без мережі доступні лише збережені файли сторінки.</p>
 
     <div class="group-title">Відображення</div>
     <div class="row"><label>Інформація про об'єкти</label><div id="toggleNameLabel" class="switch" role="switch" aria-label="Інформація про об'єкти" aria-checked="false" tabindex="0"></div></div>
@@ -923,6 +957,8 @@ const defaultSettings = {
     alertHistory: [],
     contrastMode: "normal",
     motionMode: "system",
+    language: "uk",
+    viewPreset: "standard",
     objectSize: 1,
     iconOutline: true,
     mapLayer: "osm"
@@ -954,6 +990,8 @@ function saveSettings() {
             alertHistory: settings.alertHistory,
             contrastMode: settings.contrastMode,
             motionMode: settings.motionMode,
+            language: settings.language,
+            viewPreset: settings.viewPreset,
             objectSize: settings.objectSize,
             iconOutline: settings.iconOutline,
             mapLayer: currentMapKey
@@ -963,7 +1001,6 @@ function saveSettings() {
 
 const savedSettings = loadSettings();
 const settings = Object.assign({}, defaultSettings, savedSettings);
-settings.showNameLabel = false;
 settings.showTracks = false;
 settings.showInfoBlock = false;
 settings.showUkraineMask = true;
@@ -974,6 +1011,8 @@ settings.crosshairOpacity = Math.max(0.15, Math.min(1, Number(settings.crosshair
 settings.showRaionLabels = !!settings.showRaionLabels;
 settings.contrastMode = settings.contrastMode === "high" ? "high" : "normal";
 settings.motionMode = ["system", "reduce", "full"].includes(settings.motionMode) ? settings.motionMode : "system";
+settings.language = ["uk", "ru", "en"].includes(settings.language) ? settings.language : "uk";
+settings.viewPreset = ["standard", "minimal", "alerts"].includes(settings.viewPreset) ? settings.viewPreset : "standard";
 settings.objectSize = Math.max(0.6, Math.min(1.6, Number(settings.objectSize) || 1));
 settings.iconOutline = true;
 let currentTheme = "dark";
@@ -989,10 +1028,202 @@ try {
     settings.showAirAlerts = true;
 }
 
-function applyTheme(theme) {
-    currentTheme = theme;
-    document.documentElement.setAttribute("data-theme", theme);
+function readSharedMapState() {
+    const params = new URLSearchParams(window.location.search);
+    const view = (params.get("view") || "").split(",").map(Number);
+    if (view.length !== 3 || !view.every(Number.isFinite)) return null;
+    const [lat, lng, zoom] = view;
+    if (lat < 43.8 || lat > 52.8 || lng < 21.8 || lng > 40.5 || zoom < 3 || zoom > 19) return null;
+    return {
+        center: [lat, lng],
+        zoom,
+        theme: ["dark", "light"].includes(params.get("theme")) ? params.get("theme") : null,
+        showAirAlerts: ["0", "1"].includes(params.get("alerts")) ? params.get("alerts") === "1" : null,
+        alertLevelFilter: ["all", "red", "yellow"].includes(params.get("level")) ? params.get("level") : null,
+        showNameLabel: ["0", "1"].includes(params.get("names")) ? params.get("names") === "1" : null
+    };
 }
+const sharedMapState = readSharedMapState();
+if (sharedMapState) {
+    if (sharedMapState.showAirAlerts !== null) settings.showAirAlerts = sharedMapState.showAirAlerts;
+    if (sharedMapState.alertLevelFilter) settings.alertLevelFilter = sharedMapState.alertLevelFilter;
+    if (sharedMapState.showNameLabel !== null) settings.showNameLabel = sharedMapState.showNameLabel;
+}
+
+function applyTheme(theme) {
+    currentTheme = ["dark", "light"].includes(theme) ? theme : "dark";
+    document.documentElement.setAttribute("data-theme", currentTheme);
+}
+if (sharedMapState && sharedMapState.theme) applyTheme(sharedMapState.theme);
+
+const uiTranslations = {
+    ru: {
+        "Налаштування": "Настройки", "Закрити": "Закрыть", "Персоналізація": "Персонализация",
+        "Пресет карти": "Пресет карты", "Стандартний": "Стандартный", "Мінімалістичний": "Минималистичный",
+        "Фокус на тривогах": "Фокус на тревогах", "Мова інтерфейсу": "Язык интерфейса",
+        "Встановити застосунок": "Установить приложение", "Поділитися картою": "Поделиться картой",
+        "Застосунок можна встановити з меню браузера. Без мережі доступні лише збережені файли сторінки.": "Приложение можно установить из меню браузера. Без сети доступны только сохранённые файлы страницы.",
+        "Поділитися виглядом карти": "Поделиться видом карты", "Відображення": "Отображение",
+        "Інформація про об'єкти": "Информация об объектах", "Відображення повітряних тривог": "Отображение воздушных тревог",
+        "Повітряні тривоги": "Воздушные тревоги", "Звук нової тривоги": "Звук новой тревоги",
+        "Короткий сигнал при появі нової тривоги. Не замінює офіційні сповіщення.": "Короткий сигнал при появлении новой тревоги. Не заменяет официальные оповещения.",
+        "Рівні тривог": "Уровни тревог", "Усі рівні": "Все уровни", "Лише червоні": "Только красные",
+        "Лише жовті": "Только жёлтые", "Збережений район": "Сохранённый район",
+        "Наприклад: Київський": "Например: Киевский", "Світіння об'єктів": "Свечение объектов",
+        "Перехрестя в центрі екрана": "Перекрестие в центре экрана", "Прозорість перехрестя": "Прозрачность перекрестия",
+        "Назви районів при наведенні": "Названия районов при наведении", "Розмір об'єктів": "Размер объектов",
+        "Жовтий рівень — дронова небезпека, червоний — ракетна. Дані: alerts.in.ua": "Жёлтый уровень — угроза БПЛА, красный — ракетная. Данные: alerts.in.ua",
+        "Карта": "Карта", "Шар": "Слой", "Доступність": "Доступность", "Контрастність": "Контрастность",
+        "Звичайна": "Обычная", "Підвищена": "Повышенная", "Анімації": "Анимация",
+        "Як у системі": "Как в системе", "Зменшити": "Уменьшить", "Увімкнути": "Включить",
+        "Адміністратор": "Администратор", "Увійти": "Войти", "Сховати": "Скрыть",
+        "Показати панель": "Показать панель", "Повернути інтерфейс": "Вернуть интерфейс",
+        "цілей": "целей", "Легенда цілей": "Легенда целей",
+        "Вартовий-Радар v6.0 — моніторинг повітряних загроз": "Вартовий-Радар v6.0 — мониторинг воздушных угроз",
+        "v6.0 · повітряні загрози": "v6.0 · воздушные угрозы",
+        "Зв'язок із сервером": "Связь с сервером", "Сховати інтерфейс": "Скрыть интерфейс",
+        "Вибери район, щоб відфільтрувати тривоги.": "Выберите район, чтобы фильтровать тревоги.",
+        "Фільтр змінює відображення карти, списку та історії. Звуковий сигнал працює для всіх рівнів.": "Фильтр меняет отображение карты, списка и истории. Звуковой сигнал работает для всех уровней.",
+        "Клавіатура: Tab для переходу по елементах; сфокусуй карту, щоб переміщати її стрілками та змінювати масштаб клавішами +/−. Escape закриває панель.": "Клавиатура: Tab для перехода по элементам; сфокусируйте карту, чтобы перемещать её стрелками и менять масштаб клавишами +/−. Escape закрывает панель.",
+        "Офлайн — доступні збережені файли, плитки карти можуть не завантажитись": "Офлайн — доступны сохранённые файлы, тайлы карты могут не загрузиться",
+        "Не вдалося скопіювати посилання. Скопіюйте URL з адресного рядка.": "Не удалось скопировать ссылку. Скопируйте URL из адресной строки.",
+        "Посилання на вигляд карти скопійовано.": "Ссылка на вид карты скопирована.",
+        "Не вдалося створити посилання на карту.": "Не удалось создать ссылку на карту.",
+        "Не вдалося встановити застосунок.": "Не удалось установить приложение.",
+        "Перевірено о ": "Проверено в ", "Знято о ": "Отбой в ", "Активна": "Активна",
+        "Очікування даних…": "Ожидание данных…",
+        "Інтерактивна карта України. Стрілки переміщують карту, плюс і мінус змінюють масштаб клавішами +/−.": "Интерактивная карта Украины. Стрелки перемещают карту, плюс и минус меняют масштаб клавишами +/−.",
+        "Втрачена ціль": "Потерянная цель", "Зона загрози": "Зона угрозы",
+        "Історія за 48 годин": "История за 48 часов", "Активних тривог за даними джерела немає.": "По данным источника активных тревог нет.",
+        "Статус може оновлюватися із затримкою. Дотримуйтеся офіційних повідомлень.": "Статус может обновляться с задержкой. Следуйте официальным сообщениям.",
+        "Увага": "Внимание", "Прийняти": "Принять", "Пароль": "Пароль",
+        "Застосунок НЕ є офіційним джерелом інформації про повітряну тривогу.": "Приложение НЕ является официальным источником информации о воздушной тревоге.",
+        "У надзвичайних ситуаціях орієнтуйтеся лише на офіційні повідомлення державних органів.": "В чрезвычайных ситуациях ориентируйтесь только на официальные сообщения государственных органов."
+    },
+    en: {
+        "Налаштування": "Settings", "Закрити": "Close", "Персоналізація": "Personalization",
+        "Пресет карти": "Map preset", "Стандартний": "Standard", "Мінімалістичний": "Minimal",
+        "Фокус на тривогах": "Alerts focus", "Мова інтерфейсу": "Interface language",
+        "Встановити застосунок": "Install app", "Поділитися картою": "Share map",
+        "Застосунок можна встановити з меню браузера. Без мережі доступні лише збережені файли сторінки.": "Install the app from your browser menu. Only cached page files are available offline.",
+        "Поділитися виглядом карти": "Share map view", "Відображення": "Display",
+        "Інформація про об'єкти": "Object information", "Відображення повітряних тривог": "Show air alerts",
+        "Повітряні тривоги": "Air alerts", "Звук нової тривоги": "New alert sound",
+        "Короткий сигнал при появі нової тривоги. Не замінює офіційні сповіщення.": "A short sound when a new alert appears. Does not replace official alerts.",
+        "Рівні тривог": "Alert levels", "Усі рівні": "All levels", "Лише червоні": "Red only",
+        "Лише жовті": "Yellow only", "Збережений район": "Saved district",
+        "Наприклад: Київський": "For example: Kyivskyi", "Світіння об'єктів": "Object glow",
+        "Перехрестя в центрі екрана": "Center crosshair", "Прозорість перехрестя": "Crosshair opacity",
+        "Назви районів при наведенні": "Show district names on hover", "Розмір об'єктів": "Object size",
+        "Жовтий рівень — дронова небезпека, червоний — ракетна. Дані: alerts.in.ua": "Yellow indicates drone threat; red indicates missile threat. Data: alerts.in.ua",
+        "Карта": "Map", "Шар": "Layer", "Доступність": "Accessibility", "Контрастність": "Contrast",
+        "Звичайна": "Normal", "Підвищена": "High", "Анімації": "Animations",
+        "Як у системі": "System", "Зменшити": "Reduce", "Увімкнути": "Enable",
+        "Адміністратор": "Administrator", "Увійти": "Sign in", "Сховати": "Hide",
+        "Показати панель": "Show panel", "Повернути інтерфейс": "Restore interface",
+        "цілей": "targets", "Легенда цілей": "Target legend",
+        "Вартовий-Радар v6.0 — моніторинг повітряних загроз": "Vartovyi-Radar v6.0 — air threat monitoring",
+        "v6.0 · повітряні загрози": "v6.0 · air threats",
+        "Зв'язок із сервером": "Server connection", "Сховати інтерфейс": "Hide interface",
+        "Вибери район, щоб відфільтрувати тривоги.": "Select a district to filter alerts.",
+        "Фільтр змінює відображення карти, списку та історії. Звуковий сигнал працює для всіх рівнів.": "The filter changes the map, list, and history. Sound alerts work for all levels.",
+        "Клавіатура: Tab для переходу по елементах; сфокусуй карту, щоб переміщати її стрілками та змінювати масштаб клавішами +/−. Escape закриває панель.": "Keyboard: use Tab to move between controls; focus the map to pan with arrow keys and zoom with +/−. Escape closes the panel.",
+        "Офлайн — доступні збережені файли, плитки карти можуть не завантажитись": "Offline — saved app files are available; map tiles may not load",
+        "Не вдалося скопіювати посилання. Скопіюйте URL з адресного рядка.": "Could not copy the link. Copy the URL from the address bar.",
+        "Посилання на вигляд карти скопійовано.": "Map view link copied.",
+        "Не вдалося створити посилання на карту.": "Could not create the map link.",
+        "Не вдалося встановити застосунок.": "Could not install the app.",
+        "Перевірено о ": "Checked at ", "Знято о ": "Ended at ", "Активна": "Active",
+        "Очікування даних…": "Waiting for data…",
+        "Інтерактивна карта України. Стрілки переміщують карту, плюс і мінус змінюють масштаб клавішами +/−.": "Interactive map of Ukraine. Use arrow keys to pan and plus/minus to zoom.",
+        "Втрачена ціль": "Lost target", "Зона загрози": "Threat zone",
+        "Історія за 48 годин": "48-hour history", "Активних тривог за даними джерела немає.": "No active alerts reported by the source.",
+        "Статус може оновлюватися із затримкою. Дотримуйтеся офіційних повідомлень.": "Status may be delayed. Follow official announcements.",
+        "Увага": "Warning", "Прийняти": "Accept", "Пароль": "Password",
+        "Застосунок НЕ є офіційним джерелом інформації про повітряну тривогу.": "This app is NOT an official source of air-alert information.",
+        "У надзвичайних ситуаціях орієнтуйтеся лише на офіційні повідомлення державних органів.": "In emergencies, rely only on official messages from government authorities."
+    }
+};
+const translationEntries = Object.fromEntries(Object.entries(uiTranslations).map(([language, entries]) => [
+    language,
+    Object.entries(entries).sort((a, b) => b[0].length - a[0].length)
+]));
+const translatedTextNodes = new WeakMap();
+const translatedAttributes = new WeakMap();
+const translatedAttributesToWatch = ["aria-label", "title", "placeholder"];
+function translateUiText(text) {
+    const entries = translationEntries[settings.language];
+    if (!entries) return text;
+    for (const [source, translated] of entries) text = text.split(source).join(translated);
+    return text;
+}
+function translateTextNode(node) {
+    if (!node.parentElement || node.parentElement.closest("script,style")) return;
+    let state = translatedTextNodes.get(node);
+    if (!state || node.nodeValue !== state.translated) state = { source: node.nodeValue, translated: node.nodeValue };
+    const translated = translateUiText(state.source);
+    state.translated = translated;
+    translatedTextNodes.set(node, state);
+    if (node.nodeValue !== translated) node.nodeValue = translated;
+}
+function translateElementAttributes(element) {
+    let state = translatedAttributes.get(element);
+    if (!state) {
+        state = {};
+        translatedAttributes.set(element, state);
+    }
+    for (const attribute of translatedAttributesToWatch) {
+        if (!element.hasAttribute(attribute)) continue;
+        const current = element.getAttribute(attribute);
+        if (!state[attribute] || current !== state[attribute].translated) {
+            state[attribute] = { source: current, translated: current };
+        }
+        state[attribute].translated = translateUiText(state[attribute].source);
+        if (current !== state[attribute].translated) element.setAttribute(attribute, state[attribute].translated);
+    }
+}
+function translateSubtree(node) {
+    if (node.nodeType === Node.TEXT_NODE) {
+        translateTextNode(node);
+        return;
+    }
+    if (node.nodeType !== Node.ELEMENT_NODE) return;
+    translateElementAttributes(node);
+    const walker = document.createTreeWalker(node, NodeFilter.SHOW_ELEMENT | NodeFilter.SHOW_TEXT);
+    while (walker.nextNode()) {
+        if (walker.currentNode.nodeType === Node.TEXT_NODE) translateTextNode(walker.currentNode);
+        else translateElementAttributes(walker.currentNode);
+    }
+}
+function applyInterfaceLanguage() {
+    document.documentElement.lang = settings.language;
+    document.title = translateUiText("Вартовий-Радар v6.0 — моніторинг повітряних загроз");
+    const languageSelect = document.getElementById("languageSelect");
+    if (languageSelect) languageSelect.value = settings.language;
+    translateSubtree(document.body);
+}
+applyInterfaceLanguage();
+const interfaceLanguageObserver = new MutationObserver(records => {
+    for (const record of records) {
+        if (record.type === "characterData") translateTextNode(record.target);
+        else if (record.type === "attributes") translateElementAttributes(record.target);
+        else for (const node of record.addedNodes) translateSubtree(node);
+    }
+});
+interfaceLanguageObserver.observe(document.body, {
+    subtree: true, childList: true, characterData: true, attributes: true,
+    attributeFilter: translatedAttributesToWatch
+});
+const languageSelect = document.getElementById("languageSelect");
+if (languageSelect) {
+    languageSelect.value = settings.language;
+    languageSelect.addEventListener("change", () => {
+        settings.language = ["uk", "ru", "en"].includes(languageSelect.value) ? languageSelect.value : "uk";
+        applyInterfaceLanguage();
+        saveSettings();
+    });
+}
+
 function applyAccessibilityPreferences() {
     document.documentElement.dataset.contrast = settings.contrastMode;
     document.documentElement.dataset.motion = settings.motionMode;
@@ -1030,12 +1261,15 @@ if (alertLevelFilterSelect) {
     });
 }
 
+function getInterfaceLocale() {
+    return { uk: "uk-UA", ru: "ru-RU", en: "en-GB" }[settings.language] || "uk-UA";
+}
 function updateKyivClock() {
     const el = document.getElementById("tbClock");
     if (!el) return;
     try {
         const now = new Date();
-        const fmt = new Intl.DateTimeFormat("uk-UA", {
+        const fmt = new Intl.DateTimeFormat(getInterfaceLocale(), {
             timeZone: "Europe/Kyiv",
             hour: "2-digit", minute: "2-digit", second: "2-digit",
             hour12: false
@@ -1345,7 +1579,7 @@ const map = L.map("map", {
     attributionControl: false,
     maxZoom: 19,
     keyboard: true
-}).setView([48.5, 32.0], 6);
+}).setView(sharedMapState ? sharedMapState.center : [48.5, 32.0], sharedMapState ? sharedMapState.zoom : 6);
 map.getContainer().setAttribute("aria-label", "Інтерактивна карта України. Стрілки переміщують карту, плюс і мінус змінюють масштаб.");
 
 const maskLayer = L.layerGroup().addTo(map);
@@ -1602,7 +1836,7 @@ function airAlertStyle(level) {
 let lastAirAlertUpdateAt = 0;
 function formatAirAlertCheckTime() {
     if (!lastAirAlertUpdateAt) return 'Очікування даних…';
-    return 'Перевірено о ' + new Intl.DateTimeFormat('uk-UA', {
+    return 'Перевірено о ' + new Intl.DateTimeFormat(getInterfaceLocale(), {
         hour: '2-digit', minute: '2-digit'
     }).format(new Date(lastAirAlertUpdateAt));
 }
@@ -1671,13 +1905,13 @@ function renderAirAlertHistory() {
         dot.className = 'alert-summary-dot ' + item.level;
         const name = document.createElement('span');
         name.className = 'alert-summary-region';
-        const start = new Intl.DateTimeFormat('uk-UA', { dateStyle: 'short', timeStyle: 'short' })
+        const start = new Intl.DateTimeFormat(getInterfaceLocale(), { dateStyle: 'short', timeStyle: 'short' })
             .format(new Date(item.startedAt));
         name.textContent = item.district + ' · ' + start;
         const state = document.createElement('span');
         state.className = 'alert-summary-level ' + item.level;
         state.textContent = item.endedAt
-            ? 'Знято о ' + new Intl.DateTimeFormat('uk-UA', { hour: '2-digit', minute: '2-digit' }).format(new Date(item.endedAt))
+            ? 'Знято о ' + new Intl.DateTimeFormat(getInterfaceLocale(), { hour: '2-digit', minute: '2-digit' }).format(new Date(item.endedAt))
             : 'Активна';
         row.append(dot, name, state);
         history.appendChild(row);
@@ -3806,6 +4040,111 @@ toggleNameLabel.onkeydown = event => {
         toggleObjectNameLabels();
     }
 };
+
+const viewPresetSelect = document.getElementById("viewPreset");
+if (viewPresetSelect) {
+    viewPresetSelect.value = settings.viewPreset;
+    viewPresetSelect.addEventListener("change", () => {
+        const preset = ["standard", "minimal", "alerts"].includes(viewPresetSelect.value)
+            ? viewPresetSelect.value : "standard";
+        const presets = {
+            standard: { alerts: true, level: "all", names: false, glow: false, crosshair: false },
+            minimal: { alerts: false, level: "all", names: false, glow: false, crosshair: false },
+            alerts: { alerts: true, level: "red", names: true, glow: true, crosshair: false }
+        };
+        const selected = presets[preset];
+        if (settings.showAirAlerts !== selected.alerts) toggleAirAlertVisibility(selected.alerts);
+        if (alertLevelFilterSelect && settings.alertLevelFilter !== selected.level) {
+            alertLevelFilterSelect.value = selected.level;
+            alertLevelFilterSelect.dispatchEvent(new Event("change"));
+        }
+        if (settings.showNameLabel !== selected.names) toggleObjectNameLabels();
+        if (settings.glow !== selected.glow) setGlowEnabled(selected.glow);
+        if (settings.showCrosshair !== selected.crosshair) setCrosshairEnabled(selected.crosshair);
+        if (preset === "standard") map.setView([48.5, 32.0], 6);
+        settings.viewPreset = preset;
+        saveSettings();
+    });
+}
+
+let appNoticeTimeout;
+function showAppNotice(message) {
+    const notice = document.getElementById("appNotice");
+    if (!notice) return;
+    notice.textContent = message;
+    notice.classList.add("visible");
+    clearTimeout(appNoticeTimeout);
+    appNoticeTimeout = setTimeout(() => notice.classList.remove("visible"), 3500);
+}
+async function shareCurrentMapView() {
+    try {
+        const center = map.getCenter();
+        const url = new URL(window.location.pathname, window.location.origin);
+        url.searchParams.set("view", [center.lat.toFixed(5), center.lng.toFixed(5), map.getZoom()].join(","));
+        url.searchParams.set("theme", currentTheme);
+        url.searchParams.set("alerts", settings.showAirAlerts ? "1" : "0");
+        url.searchParams.set("level", settings.alertLevelFilter);
+        url.searchParams.set("names", settings.showNameLabel ? "1" : "0");
+        if (navigator.share) {
+            try {
+                await navigator.share({ title: "Вартовий-Радар", url: url.href });
+                return;
+            } catch (error) {
+                if (error && error.name === "AbortError") return;
+            }
+        }
+        if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(url.href);
+            showAppNotice("Посилання на вигляд карти скопійовано.");
+            return;
+        }
+        window.prompt("Скопіюйте посилання на карту:", url.href);
+    } catch (error) {
+        console.error("Could not share map view:", error);
+        showAppNotice("Не вдалося створити посилання на карту.");
+    }
+}
+document.getElementById("shareViewBtn").addEventListener("click", shareCurrentMapView);
+document.getElementById("shareSettingsBtn").addEventListener("click", shareCurrentMapView);
+
+let deferredInstallPrompt = null;
+const installAppButton = document.getElementById("installAppBtn");
+window.addEventListener("beforeinstallprompt", event => {
+    event.preventDefault();
+    deferredInstallPrompt = event;
+    installAppButton.hidden = false;
+});
+installAppButton.addEventListener("click", async () => {
+    if (!deferredInstallPrompt) return;
+    try {
+        deferredInstallPrompt.prompt();
+        await deferredInstallPrompt.userChoice;
+        deferredInstallPrompt = null;
+        installAppButton.hidden = true;
+    } catch (error) {
+        console.error("PWA install prompt failed:", error);
+        showAppNotice("Не вдалося встановити застосунок.");
+    }
+});
+window.addEventListener("appinstalled", () => {
+    deferredInstallPrompt = null;
+    installAppButton.hidden = true;
+});
+
+const offlineBanner = document.getElementById("offlineBanner");
+function updateOfflineBanner() {
+    offlineBanner.hidden = navigator.onLine;
+}
+window.addEventListener("online", updateOfflineBanner);
+window.addEventListener("offline", updateOfflineBanner);
+updateOfflineBanner();
+if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+        navigator.serviceWorker.register("/sw.js").catch(error => {
+            console.error("Service worker registration failed:", error);
+        });
+    });
+}
 
 document.getElementById("mapSelect").onchange = function() { setMapLayer(this.value); };
 

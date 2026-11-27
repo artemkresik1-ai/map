@@ -1,0 +1,20 @@
+{
+  "name": "Вартовий-Радар — карта повітряних загроз",
+  "short_name": "Вартовий-Радар",
+  "description": "Інтерактивна карта повітряних загроз в Україні",
+  "lang": "uk",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0b1220",
+  "theme_color": "#0b1220",
+  "icons": [
+    {
+      "src": "/icons/app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
