@@ -133,6 +133,65 @@ input[type="range"].rng::-moz-range-thumb { width:10px; height:16px; background:
 #jsError { position:fixed; top:calc(var(--bar-h) + 10px); left:10px; z-index:99999; max-width:420px; padding:8px 12px; background:var(--bg-2); border:1px solid var(--red); border-left:3px solid var(--red); color:var(--red); font:500 10px var(--mono); border-radius:var(--radius-sm); display:none; white-space:pre-wrap; }
 #jsError.visible { display:block; }
 
+.alert-summary-panel {
+  right:12px;
+  width:360px;
+  max-width:calc(100vw - 24px);
+  transform:translateX(calc(100% + 24px));
+}
+.alert-summary-panel.open { transform:none; }
+.alert-summary-meta {
+  margin:12px 0;
+  color:var(--txt-3);
+  font:500 10px var(--mono);
+}
+.alert-summary-list { display:grid; gap:8px; }
+.alert-summary-item {
+  display:grid;
+  grid-template-columns:10px minmax(0,1fr) auto;
+  align-items:center;
+  gap:9px;
+  min-height:42px;
+  padding:8px 10px;
+  background:rgba(255,255,255,.035);
+  border:1px solid var(--border);
+  border-radius:10px;
+}
+.alert-summary-dot { width:9px; height:9px; border-radius:50%; }
+.alert-summary-dot.red { background:#ff304f; box-shadow:0 0 9px rgba(255,48,79,.55); }
+.alert-summary-dot.yellow { background:#ffd43b; box-shadow:0 0 9px rgba(255,212,59,.55); }
+.alert-summary-region { overflow:hidden; font-size:12px; font-weight:600; text-overflow:ellipsis; }
+.alert-summary-level {
+  padding:3px 7px;
+  border-radius:6px;
+  font:700 9px var(--sans);
+  white-space:nowrap;
+}
+.alert-summary-level.red { color:#ffb6c1; background:rgba(255,48,79,.14); }
+.alert-summary-level.yellow { color:#ffe28a; background:rgba(255,212,59,.14); }
+#alertSummaryCount {
+  display:inline-grid;
+  min-width:22px;
+  height:22px;
+  margin-left:6px;
+  place-items:center;
+  color:var(--on-accent);
+  background:var(--accent);
+  border-radius:11px;
+  font:700 10px var(--mono);
+  letter-spacing:0;
+  vertical-align:middle;
+}
+.alert-summary-empty {
+  padding:16px 8px;
+  color:var(--txt-2);
+  text-align:center;
+  font-size:12px;
+}
+html[data-theme="light"] .alert-summary-item { background:rgba(10,95,120,.025); }
+html[data-theme="light"] .alert-summary-level.red { color:#a51931; }
+html[data-theme="light"] .alert-summary-level.yellow { color:#815400; }
+
 @media (max-width:640px) {
   .brand-sub, .tb-clock .t2, .tb-hide { display:none; }
   #topbar > * { padding:0 10px; }
@@ -611,6 +670,7 @@ html[data-theme="light"] #alertLegend { background:rgba(248,251,253,.94); }
   #settingsPanel { left:10px; transform:translateX(calc(-100% - 16px)); }
   .panel-body { padding:6px 14px 20px; }
   #alertLegend { left:10px; bottom:12px; gap:9px; padding:7px 9px; font-size:9px; }
+  .alert-summary-panel { right:10px; transform:translateX(calc(100% + 18px)); }
 }
 </style>
 </head>
@@ -639,6 +699,9 @@ html[data-theme="light"] #alertLegend { background:rgba(248,251,253,.94); }
 <nav id="floatingBtns">
   <button class="fbtn" id="settingsBtn" title="Налаштування" aria-label="Налаштування">
     <svg width="18" height="18" viewBox="0 0 24 24"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/><circle cx="9" cy="7" r="2" fill="var(--bg)"/><circle cx="15" cy="12" r="2" fill="var(--bg)"/><circle cx="8" cy="17" r="2" fill="var(--bg)"/></svg>
+  </button>
+  <button class="fbtn" id="alertsBtn" title="Повітряні тривоги" aria-label="Відкрити список повітряних тривог" aria-expanded="false">
+    <svg width="18" height="18" viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg>
   </button>
   <button class="fbtn" id="toggleUiBtn" title="Сховати інтерфейс" aria-label="Сховати інтерфейс">
     <svg width="18" height="18" viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
@@ -698,6 +761,19 @@ html[data-theme="light"] #alertLegend { background:rgba(248,251,253,.94); }
       <p class="note" id="spawnHint" style="display:none">Клік 1 — звідки стартує · Клік 2 — куди летить · Esc — скасувати</p>
     </div>
     </div>
+  </div>
+</aside>
+
+<aside id="alertsPanel" class="panel alert-summary-panel" aria-label="Активні повітряні тривоги" aria-hidden="true" inert>
+  <div class="panel-header">
+    <h2>Повітряні тривоги <span id="alertSummaryCount">0</span></h2>
+    <button class="panel-close" id="alertsClose" aria-label="Закрити список тривог">✕</button>
+  </div>
+  <div class="panel-body">
+    <div id="alertSummaryUpdated" class="alert-summary-meta" aria-live="polite">Очікування даних…</div>
+    <div id="alertSummaryList" class="alert-summary-list"></div>
+    <p id="alertSummaryEmpty" class="alert-summary-empty">Активних тривог за даними джерела немає.</p>
+    <p class="note">Статус може оновлюватися із затримкою. Дотримуйтеся офіційних повідомлень.</p>
   </div>
 </aside>
 
@@ -1307,6 +1383,7 @@ const AIR_ALERT_REGION_ISO = {
     'місто севастополь': 'UA-40', 'м. севастополь': 'UA-40', 'севастополь': 'UA-40'
 };
 let airAlertIso = new Map();
+let airAlertRegionNames = new Map();
 let airAlertDistrictNames = new Map();
 let airAlertHromadaNames = new Map();
 let airAlertRaionsData = null;
@@ -1345,6 +1422,42 @@ function airAlertStyle(level) {
         fillOpacity: red ? 0.42 : 0.38,
         interactive: false
     };
+}
+let lastAirAlertUpdateAt = 0;
+function formatAirAlertCheckTime() {
+    if (!lastAirAlertUpdateAt) return 'Очікування даних…';
+    return 'Перевірено о ' + new Intl.DateTimeFormat('uk-UA', {
+        hour: '2-digit', minute: '2-digit'
+    }).format(new Date(lastAirAlertUpdateAt));
+}
+function renderAlertSummaryPanel() {
+    const list = document.getElementById('alertSummaryList');
+    if (!list) return;
+    const active = Array.from(airAlertIso.entries()).map(([iso, level]) => ({
+        name: airAlertRegionNames.get(iso) || iso,
+        level
+    })).sort((a, b) => a.name.localeCompare(b.name, 'uk'));
+    const count = document.getElementById('alertSummaryCount');
+    const empty = document.getElementById('alertSummaryEmpty');
+    const updated = document.getElementById('alertSummaryUpdated');
+    count.textContent = String(active.length);
+    empty.hidden = active.length > 0;
+    updated.textContent = formatAirAlertCheckTime();
+    list.replaceChildren();
+    for (const item of active) {
+        const row = document.createElement('div');
+        row.className = 'alert-summary-item';
+        const dot = document.createElement('span');
+        dot.className = 'alert-summary-dot ' + item.level;
+        const name = document.createElement('span');
+        name.className = 'alert-summary-region';
+        name.textContent = item.name;
+        const level = document.createElement('span');
+        level.className = 'alert-summary-level ' + item.level;
+        level.textContent = item.level === 'red' ? 'Ракетна' : 'БпЛА';
+        row.append(dot, name, level);
+        list.appendChild(row);
+    }
 }
 async function loadAirAlertRaions() {
     if (airAlertRaionsData) return;
@@ -1741,9 +1854,12 @@ function applyAirAlertData(data) {
     const hasNewAlert = hasNewAirAlert(previousAirAlertKeys, nextAlertKeys);
     previousAirAlertKeys = nextAlertKeys;
     airAlertIso = updated;
+    airAlertRegionNames = updatedRegionNames;
     airAlertDistrictNames = updatedDistricts;
     airAlertHromadaNames = updatedHromady;
     lastLiveAirAlerts = data;
+    lastAirAlertUpdateAt = Date.now();
+    renderAlertSummaryPanel();
     renderAirAlertRegions();
     if (hasNewAlert) playAirAlertTone();
     if (updatedDistricts.size && !airAlertRaionsData) loadAirAlertRaions();
@@ -1832,13 +1948,17 @@ async function fetchAirAlertData() {
 }
 let airAlertErrorToastAt = 0;
 async function refreshAirAlertRegions() {
-    if (!settings.showAirAlerts || airAlertFetchInProgress) return;
+    if (airAlertFetchInProgress) return;
     airAlertFetchInProgress = true;
     try {
         const data = await fetchAirAlertData();
         applyAirAlertData(data);
     } catch (err) {
         console.warn('Air alerts:', err && err.message ? err.message : err);
+        const updated = document.getElementById('alertSummaryUpdated');
+        if (updated) updated.textContent = lastAirAlertUpdateAt
+            ? 'Не вдалося оновити · остання перевірка ' + formatAirAlertCheckTime().replace('Перевірено о ', '')
+            : 'Не вдалося отримати дані';
         // Предыдущее состояние слоя не стираем; предупреждаем не чаще раза в 5 минут
         const now = Date.now();
         if (typeof toast === 'function' && now - airAlertErrorToastAt > 300000) {
@@ -2033,7 +2153,8 @@ if (iconOutlineSwitch) {
 syncIconOutlineUI();
 
 setInterval(refreshAirAlertRegions, 60000);
-if (settings.showAirAlerts) { loadOccupiedRegions(); loadAirAlertRaions(); loadAirAlertHromady(); refreshAirAlertRegions(); }
+if (settings.showAirAlerts) { loadOccupiedRegions(); loadAirAlertRaions(); loadAirAlertHromady(); }
+refreshAirAlertRegions();
 
 function renderLightRadarBoundaries() {
     lightRadarBoundaries.clearLayers();
@@ -3343,6 +3464,17 @@ function connect() {
 // ═══ UI ═══
 document.getElementById("settingsBtn").onclick = () => document.getElementById("settingsPanel").classList.add("open");
 document.getElementById("settingsClose").onclick = () => document.getElementById("settingsPanel").classList.remove("open");
+const alertsPanel = document.getElementById("alertsPanel");
+const alertsButton = document.getElementById("alertsBtn");
+function setAlertsPanelOpen(open) {
+    alertsPanel.classList.toggle("open", open);
+    alertsPanel.setAttribute("aria-hidden", String(!open));
+    alertsPanel.inert = !open;
+    alertsButton.setAttribute("aria-expanded", String(open));
+}
+alertsButton.onclick = () => setAlertsPanelOpen(!alertsPanel.classList.contains("open"));
+document.getElementById("alertsClose").onclick = () => setAlertsPanelOpen(false);
+renderAlertSummaryPanel();
 const toggleNameLabel = document.getElementById("toggleNameLabel");
 toggleNameLabel.classList.toggle("on", settings.showNameLabel);
 toggleNameLabel.onclick = function() { settings.showNameLabel = !settings.showNameLabel; toggleNameLabel.classList.toggle("on", settings.showNameLabel); updateAllLabels(); saveSettings(); };
