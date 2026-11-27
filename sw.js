@@ -1,4 +1,4 @@
-const CACHE_VERSION = "radar-shell-v3";
+const CACHE_VERSION = "radar-shell-v4";
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const SHELL_URLS = ["/", "/index.html", "/manifest.webmanifest", "/icons/app-icon.svg"];
 const ALLOWED_CDN_HOSTS = new Set(["unpkg.com", "fonts.googleapis.com", "fonts.gstatic.com"]);
