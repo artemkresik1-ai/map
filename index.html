@@ -11,11 +11,13 @@
 <link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&family=Press+Start+2P&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg:#17181a; --bg-2:#1e2023; --bg-3:#292c30; --bg-hover:#32363b;
-  --border:rgba(236,233,225,.09); --border-strong:rgba(236,233,225,.2);
-  --txt:#ece9e1; --txt-2:#a5a196; --txt-3:#716e65;
-  --accent:#f0b13a; --accent-hover:#ffc65c; --on-accent:#1a1405;
-  --green:#6fbf73; --red:#e5483b; --amber:#f0b13a;
+  --bg:#101820; --bg-2:#17232d; --bg-3:#202f3b; --bg-hover:#2a3c49;
+  --border:rgba(174,205,220,.1); --border-strong:rgba(174,205,220,.24);
+  --txt:#e8f0f4; --txt-2:#a8bac4; --txt-3:#718894;
+  --accent:#55c5dd; --accent-hover:#7bd7e8; --on-accent:#09171d;
+  --green:#62c89a; --red:#f05b68; --amber:#efb94d;
+  --surface-texture:rgba(112,194,214,.035);
+  --map-texture:rgba(112,194,214,.075);
   --radius:4px; --radius-sm:3px;
   --shadow:0 6px 20px rgba(0,0,0,.45);
   --mono:'IBM Plex Mono',Consolas,monospace;
@@ -23,15 +25,22 @@
   --info-color:#e5483b; --bar-h:40px;
 }
 html[data-theme="light"] {
-  --bg:#f3f0e8; --bg-2:#faf8f3; --bg-3:#e8e4d9; --bg-hover:#ddd8ca;
-  --border:rgba(40,32,10,.1); --border-strong:rgba(40,32,10,.24);
-  --txt:#1d1b16; --txt-2:#5d594f; --txt-3:#8c877a;
-  --accent:#b8530b; --accent-hover:#9a4308; --on-accent:#fff;
-  --shadow:0 6px 20px rgba(60,50,20,.16);
+  --bg:#edf3f5; --bg-2:#f7fafb; --bg-3:#e0eaee; --bg-hover:#d3e1e6;
+  --border:rgba(22,52,66,.11); --border-strong:rgba(22,52,66,.25);
+  --txt:#17262e; --txt-2:#526872; --txt-3:#718791;
+  --accent:#087f9d; --accent-hover:#06677f; --on-accent:#fff;
+  --surface-texture:rgba(10,95,120,.035);
+  --map-texture:rgba(10,95,120,.06);
+  --shadow:0 6px 20px rgba(27,54,67,.16);
 }
 * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; margin:0; padding:0; }
 html, body { width:100%; height:100%; overflow:hidden; font:13px/1.4 var(--sans); color:var(--txt); background:var(--bg); -webkit-font-smoothing:antialiased; }
 #map { position:fixed; inset:0; z-index:1; }
+#map::after {
+  content:""; position:absolute; inset:0; z-index:250; pointer-events:none;
+  background-image:repeating-linear-gradient(135deg, transparent 0 10px, var(--map-texture) 10px 11px);
+  background-size:16px 16px; mix-blend-mode:soft-light;
+}
 button { font-family:inherit; cursor:pointer; }
 input, select { font-family:inherit; }
 #topbar :focus-visible, #floatingBtns :focus-visible, .panel :focus-visible, #disclaimer :focus-visible, #restoreUiBtn:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
@@ -42,8 +51,12 @@ input, select { font-family:inherit; }
 #topbar.hidden { transform:translateY(-100%); }
 #topbar > * { display:flex; align-items:center; padding:0 14px; border-right:1px solid var(--border); }
 .brand { gap:10px; }
-.brand-name { font:800 14px var(--sans); letter-spacing:.2em; }
+.brand-name { font:800 14px var(--sans); letter-spacing:.12em; color:var(--accent); }
 .brand-sub { font:400 11px var(--sans); color:var(--txt-3); }
+.panel, #topbar, #floatingBtns {
+  background-image:repeating-linear-gradient(135deg, transparent 0 11px, var(--surface-texture) 11px 12px);
+  background-size:18px 18px;
+}
 .tb-ws { width:8px; height:8px; border-radius:1px; background:var(--green); transition:background .2s; }
 .tb-ws.offline { background:var(--red); animation:blink 1s steps(2) infinite; }
 @keyframes blink { 50% { opacity:.25; } }
@@ -66,7 +79,6 @@ input, select { font-family:inherit; }
 .fbtn:last-child { border-bottom:0; }
 .fbtn:hover, .fbtn[aria-expanded="true"] { background:var(--bg-3); color:var(--accent); }
 .fbtn svg { fill:none; stroke:currentColor; stroke-width:1.6; stroke-linecap:round; stroke-linejoin:round; }
-.fbtn.telegram svg { fill:currentColor; stroke:none; }
 body.ui-hidden #topbar, body.ui-hidden #floatingBtns { opacity:0; pointer-events:none; transition:opacity .2s; }
 body.ui-hidden #showTopbarBtn { opacity:0 !important; pointer-events:none !important; }
 body.spawn-pick-mode #map { cursor:crosshair !important; }
@@ -361,7 +373,6 @@ body.delete-target-mode .uavIcon>div:first-child{filter:drop-shadow(0 0 4px #ff3
   <button class="fbtn" id="toggleUiBtn" title="Сховати інтерфейс" aria-label="Сховати інтерфейс">
     <svg width="18" height="18" viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
   </button>
-  <a class="fbtn telegram" href="https://t.me/OdessaOperativno" target="_blank" rel="noopener noreferrer" title="Telegram — Одеса Оперативно" aria-label="Telegram"><svg width="19" height="19" viewBox="0 0 24 24"><path d="M21.7 3.4 2.8 10.7c-1.3.5-1.3 1.2-.2 1.5l4.9 1.5 1.9 6c.2.6.1.9.7.9.5 0 .8-.2 1.1-.5l2.6-2.5 5.3 3.9c1 .5 1.7.2 1.9-.9l3.1-15.3c.4-1.3-.5-1.9-1.4-1.5ZM8.2 13.4l11.3-7.1c.6-.4 1.1-.2.7.2l-9.4 8.5-.4 4.1-2.2-5.7Z"/></svg></a>
 </nav>
 <button id="restoreUiBtn">Повернути інтерфейс</button>
 
@@ -3690,7 +3701,7 @@ function initAdminSpawnUI() {
    full → вся Украина по центру + легенда с иконками целей → PNG
 ═══════════════════════════════════════════════════════════════ */
 (function initPhoExport() {
-    const WATERMARK_DEFAULT = "t.me/OdessaOperativno";
+    const WATERMARK_DEFAULT = "Арт.Радар";
     const WATERMARK_ADMIN = "t.me/MapaShahBucha";
     const CODES = ["pho", "full"];
     let typed = "";
