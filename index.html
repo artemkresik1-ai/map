@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="theme-color" content="#0b1220">
-<title>Вартовий-Радар v6.0 — моніторинг повітряних загроз</title>
+<title>Вартовий-Радар v7.1 — моніторинг повітряних загроз</title>
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -219,81 +219,21 @@ html[data-theme="light"] .alert-summary-item { background:rgba(10,95,120,.025); 
 html[data-theme="light"] .alert-summary-level.red { color:#a51931; }
 html[data-theme="light"] .alert-summary-level.yellow { color:#815400; }
 
-.target-legend-panel {
-  top:calc(var(--bar-h) + 12px);
-  right:60px;
-  bottom:auto;
-  width:360px;
-  max-width:calc(100vw - 72px);
-  max-height:calc(100vh - var(--bar-h) - 24px);
-  transform:translateX(calc(100% + 24px));
-  z-index:7001;
-  border:1px solid var(--border-strong);
-  border-radius:var(--radius);
-  overflow:hidden;
-}
-.target-legend-panel.open { transform:none; }
-.target-legend-panel .panel-body { min-height:0; padding:10px 14px 16px; }
-.legend-section-title {
-  margin:12px 2px 7px;
-  color:var(--accent);
-  font:700 10px var(--sans);
-  letter-spacing:.12em;
-  text-transform:uppercase;
-}
-.legend-row {
-  display:grid;
-  grid-template-columns:34px minmax(0,1fr) auto;
-  align-items:center;
-  gap:9px;
-  min-height:43px;
-  margin:5px 0;
-  padding:7px 9px;
-  background:rgba(255,255,255,.025);
-  border:1px solid var(--border);
-  border-radius:10px;
-}
-.legend-row .ico { display:grid; place-items:center; width:32px; height:32px; }
-.legend-row .name { color:var(--txt); font-size:12px; font-weight:600; }
-.legend-row .code {
-  min-width:38px;
-  padding:3px 6px;
-  color:var(--txt-2);
-  background:var(--bg-3);
-  border:1px solid var(--border);
-  border-radius:6px;
-  font:600 9px var(--mono);
-  text-align:center;
-}
-.legend-divider { height:1px; margin:13px 2px 8px; background:var(--border); }
-.legend-lost, .legend-threat-zone {
-  display:grid;
-  grid-template-columns:28px 1fr;
-  align-items:center;
-  gap:9px;
-  padding:9px 7px;
-  color:var(--txt-2);
-  font-size:11px;
-  line-height:1.45;
-}
-.lost-ico, .tz-ico {
-  display:grid;
-  width:26px;
-  height:26px;
-  place-items:center;
-  border:1px solid var(--border-strong);
-  border-radius:50%;
-  color:var(--amber);
-  background:var(--bg-3);
-  font-weight:700;
-}
-.legend-lost b, .legend-threat-zone b { color:var(--txt); }
-
 /* Оновлена навігація та швидкі налаштування */
 #topbar { background-color:color-mix(in srgb, var(--bg) 94%, var(--accent)); backdrop-filter:blur(14px); }
 .panel { background-color:color-mix(in srgb, var(--bg) 96%, var(--accent)); backdrop-filter:blur(16px); }
 .settings-quick-actions { display:grid; grid-template-columns:1fr 1fr; gap:8px; padding:12px 0 2px; }
 .settings-quick-actions .sel { height:34px; font-size:11px; }
+.release-note { margin:10px 0; padding:11px 12px; background:var(--bg-2); border:1px solid var(--border); border-radius:10px; }
+.release-note-heading { display:flex; justify-content:space-between; gap:10px; color:var(--txt); font-size:12px; }
+.release-note-heading time { color:var(--txt-3); font:500 10px var(--mono); }
+.release-note p { margin-top:7px; color:var(--txt-2); font-size:11px; line-height:1.5; }
+.alert-report { margin:14px 0; padding:12px; background:var(--bg-2); border:1px solid var(--border-strong); border-radius:11px; }
+.alert-report h3 { color:var(--txt); font:700 12px var(--sans); }
+.alert-report-summary { min-height:18px; margin:7px 0 10px; color:var(--txt-2); font-size:11px; }
+.alert-report-actions { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.alert-report-actions .sel { height:32px; font-size:11px; }
+#printReport { display:none; }
 .app-notice {
   position:fixed; left:50%; bottom:22px; z-index:12000; max-width:min(440px,calc(100vw - 32px));
   padding:10px 15px; color:var(--txt); background:var(--bg-2); border:1px solid var(--border-strong);
@@ -307,6 +247,20 @@ html[data-theme="light"] .alert-summary-level.yellow { color:#815400; }
   transform:translateX(-50%); box-shadow:var(--shadow);
 }
 .offline-banner[hidden] { display:none; }
+@media print {
+  @page { margin:16mm; }
+  html, body { width:auto; height:auto; overflow:visible; color:#111; background:#fff; }
+  body > :not(#printReport) { display:none !important; }
+  #printReport, #printReport[hidden] {
+    display:block !important; position:static; width:100%; padding:0;
+    color:#111; background:#fff; font:12px/1.5 Arial,sans-serif;
+  }
+  #printReport h1 { margin:0 0 6px; font-size:22px; }
+  #printReport p { margin:4px 0 14px; }
+  #printReport table { width:100%; border-collapse:collapse; }
+  #printReport th, #printReport td { padding:7px; border:1px solid #bbb; text-align:left; vertical-align:top; }
+  #printReport th { background:#eee; }
+}
 @media (max-width:640px) {
   .brand-sub, .tb-clock .t2, .tb-hide { display:none; }
   #topbar > * { padding:0 10px; }
@@ -760,12 +714,6 @@ html[data-theme="light"] .target-block-label { background:rgba(248,251,253,.94);
   #settingsPanel { left:10px; transform:translateX(calc(-100% - 16px)); }
   .panel-body { padding:6px 14px 20px; }
   .alert-summary-panel { right:10px; transform:translateX(calc(100% + 18px)); }
-  .target-legend-panel {
-    top:calc(var(--bar-h) + 10px);
-    right:58px;
-    max-width:calc(100vw - 70px);
-    max-height:calc(100vh - var(--bar-h) - 20px);
-  }
 }
 </style>
 </head>
@@ -776,12 +724,13 @@ html[data-theme="light"] .target-block-label { background:rgba(248,251,253,.94);
 <div id="jsError"></div>
 <div id="offlineBanner" class="offline-banner" role="status" hidden>Офлайн — доступні збережені файли, плитки карти можуть не завантажитись</div>
 <div id="appNotice" class="app-notice" role="status" aria-live="polite"></div>
+<main id="printReport" hidden aria-hidden="true"></main>
 
 <header id="topbar">
   <div class="brand">
     <span class="tb-ws" id="wsStatus" title="Зв'язок із сервером"></span>
     <span class="brand-name">Вартовий-Радар</span>
-    <span class="brand-sub">v6.0 · повітряні загрози</span>
+    <span class="brand-sub">v7.1 · повітряні загрози</span>
   </div>
   <div class="tb-stat"><span class="lbl">цілей</span><span class="val" id="tbTargets">0</span></div>
   <div class="tb-clock"><span class="t2">Київ</span><span class="t1" id="tbClock">--:--:--</span></div>
@@ -795,9 +744,6 @@ html[data-theme="light"] .target-block-label { background:rgba(248,251,253,.94);
   </button>
   <button class="fbtn" id="alertsBtn" title="Повітряні тривоги" aria-label="Відкрити список повітряних тривог" aria-expanded="false">
     <svg width="18" height="18" viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg>
-  </button>
-  <button class="fbtn" id="legendBtn" title="Легенда цілей" aria-label="Відкрити легенду цілей" aria-controls="legendModal" aria-expanded="false">
-    <svg width="18" height="18" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></svg>
   </button>
   <button class="fbtn" id="toggleUiBtn" title="Сховати інтерфейс" aria-label="Сховати інтерфейс">
     <svg width="18" height="18" viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
@@ -851,6 +797,16 @@ html[data-theme="light"] .target-block-label { background:rgba(248,251,253,.94);
     <div class="row"><label for="motionMode">Анімації</label><select id="motionMode" class="sel"><option value="system">Як у системі</option><option value="reduce">Зменшити</option><option value="full">Увімкнути</option></select></div>
     <p class="note">Клавіатура: Tab для переходу по елементах; сфокусуй карту, щоб переміщати її стрілками та змінювати масштаб клавішами +/−. Escape закриває панель.</p>
 
+    <div class="group-title">Журнал оновлень</div>
+    <article class="release-note">
+      <div class="release-note-heading"><strong>Версія 7.1</strong><time datetime="2026-11-27">27.11.2026</time></div>
+      <p>Додано звіти за тривогами з експортом CSV і друком у PDF. Легенду цілей прибрано.</p>
+    </article>
+    <article class="release-note">
+      <div class="release-note-heading"><strong>Версія 7.0</strong><time datetime="2026-11-27">27.11.2026</time></div>
+      <p>Оновлено інтерфейс, додано пресети карти, посилання на її вигляд, три мови та встановлення як застосунку.</p>
+    </article>
+
     <div id="adminSettings">
     <div class="group-title">Адміністратор</div>
     <div class="row" id="adminLoginRow">
@@ -891,22 +847,23 @@ html[data-theme="light"] .target-block-label { background:rgba(248,251,253,.94);
     <div id="alertSummaryUpdated" class="alert-summary-meta" aria-live="polite">Очікування даних…</div>
     <div id="alertSummaryList" class="alert-summary-list"></div>
     <p id="alertSummaryEmpty" class="alert-summary-empty">Активних тривог за даними джерела немає.</p>
+    <section class="alert-report" aria-labelledby="alertReportTitle">
+      <h3 id="alertReportTitle">Звіт за 48 годин</h3>
+      <p id="alertReportSummary" class="alert-report-summary" aria-live="polite"></p>
+      <p class="note">Звіт враховує вибраний рівень тривоги та збережений район.</p>
+      <div class="alert-report-actions">
+        <button id="downloadAlertReport" type="button" class="sel">Експорт CSV</button>
+        <button id="printAlertReport" type="button" class="sel">Друк / PDF</button>
+      </div>
+    </section>
     <div id="airAlertHistory" class="alert-summary-list"></div>
     <p class="note">Статус може оновлюватися із затримкою. Дотримуйтеся офіційних повідомлень.</p>
   </div>
 </aside>
 
-<aside id="legendModal" class="panel target-legend-panel" aria-label="Легенда цілей" aria-hidden="true" inert>
-  <div class="panel-header">
-    <h2>Легенда цілей</h2>
-    <button class="panel-close" id="legendClose" aria-label="Закрити легенду цілей">✕</button>
-  </div>
-  <div class="panel-body" id="legendBody"></div>
-</aside>
-
 <div id="disclaimer">
   <div class="box">
-    <span class="disclaimer-ver">v.4.5</span>
+    <span class="disclaimer-ver">v7.1</span>
     <h2>Увага</h2>
     <p>Дані на карті беруться з <b>відкритих джерел</b> і відображаються <b>в інформаційних цілях</b>.</p>
     <p class="warn">Застосунок НЕ є офіційним джерелом інформації про повітряну тривогу.</p>
@@ -1075,12 +1032,22 @@ const uiTranslations = {
         "Жовтий рівень — дронова небезпека, червоний — ракетна. Дані: alerts.in.ua": "Жёлтый уровень — угроза БПЛА, красный — ракетная. Данные: alerts.in.ua",
         "Карта": "Карта", "Шар": "Слой", "Доступність": "Доступность", "Контрастність": "Контрастность",
         "Звичайна": "Обычная", "Підвищена": "Повышенная", "Анімації": "Анимация",
+        "Журнал оновлень": "История обновлений", "Версія 7.1": "Версия 7.1", "Версія 7.0": "Версия 7.0",
+        "Додано звіти за тривогами з експортом CSV і друком у PDF. Легенду цілей прибрано.": "Добавлены отчёты по тревогам с экспортом CSV и печатью в PDF. Легенда целей удалена.",
+        "Оновлено інтерфейс, додано пресети карти, посилання на її вигляд, три мови та встановлення як застосунку.": "Обновлён интерфейс, добавлены пресеты карты, ссылки на её вид, три языка и установка как приложения.",
+        "Звіт за 48 годин": "Отчёт за 48 часов", "Експорт CSV": "Экспорт CSV", "Друк / PDF": "Печать / PDF",
+        "Звіт враховує вибраний рівень тривоги та збережений район.": "Отчёт учитывает выбранный уровень тревоги и сохранённый район.",
+        "Звіт про повітряні тривоги — 48 годин": "Отчёт о воздушных тревогах — 48 часов",
+        "Немає записів за вибраними фільтрами.": "Нет записей по выбранным фильтрам.",
+        "Звіт CSV завантажено.": "Отчёт CSV загружен.",
+        "Не вдалося створити звіт. Спробуйте ще раз.": "Не удалось создать отчёт. Попробуйте ещё раз.",
+        "Не вдалося відкрити друк.": "Не удалось открыть печать.",
         "Як у системі": "Как в системе", "Зменшити": "Уменьшить", "Увімкнути": "Включить",
         "Адміністратор": "Администратор", "Увійти": "Войти", "Сховати": "Скрыть",
         "Показати панель": "Показать панель", "Повернути інтерфейс": "Вернуть интерфейс",
-        "цілей": "целей", "Легенда цілей": "Легенда целей",
-        "Вартовий-Радар v6.0 — моніторинг повітряних загроз": "Вартовий-Радар v6.0 — мониторинг воздушных угроз",
-        "v6.0 · повітряні загрози": "v6.0 · воздушные угрозы",
+        "цілей": "целей",
+        "Вартовий-Радар v7.1 — моніторинг повітряних загроз": "Вартовий-Радар v7.1 — мониторинг воздушных угроз",
+        "v7.1 · повітряні загрози": "v7.1 · воздушные угрозы",
         "Зв'язок із сервером": "Связь с сервером", "Сховати інтерфейс": "Скрыть интерфейс",
         "Вибери район, щоб відфільтрувати тривоги.": "Выберите район, чтобы фильтровать тревоги.",
         "Фільтр змінює відображення карти, списку та історії. Звуковий сигнал працює для всіх рівнів.": "Фильтр меняет отображение карты, списка и истории. Звуковой сигнал работает для всех уровней.",
@@ -1093,7 +1060,6 @@ const uiTranslations = {
         "Перевірено о ": "Проверено в ", "Знято о ": "Отбой в ", "Активна": "Активна",
         "Очікування даних…": "Ожидание данных…",
         "Інтерактивна карта України. Стрілки переміщують карту, плюс і мінус змінюють масштаб клавішами +/−.": "Интерактивная карта Украины. Стрелки перемещают карту, плюс и минус меняют масштаб клавишами +/−.",
-        "Втрачена ціль": "Потерянная цель", "Зона загрози": "Зона угрозы",
         "Історія за 48 годин": "История за 48 часов", "Активних тривог за даними джерела немає.": "По данным источника активных тревог нет.",
         "Статус може оновлюватися із затримкою. Дотримуйтеся офіційних повідомлень.": "Статус может обновляться с задержкой. Следуйте официальным сообщениям.",
         "Увага": "Внимание", "Прийняти": "Принять", "Пароль": "Пароль",
@@ -1118,12 +1084,22 @@ const uiTranslations = {
         "Жовтий рівень — дронова небезпека, червоний — ракетна. Дані: alerts.in.ua": "Yellow indicates drone threat; red indicates missile threat. Data: alerts.in.ua",
         "Карта": "Map", "Шар": "Layer", "Доступність": "Accessibility", "Контрастність": "Contrast",
         "Звичайна": "Normal", "Підвищена": "High", "Анімації": "Animations",
+        "Журнал оновлень": "Release notes", "Версія 7.1": "Version 7.1", "Версія 7.0": "Version 7.0",
+        "Додано звіти за тривогами з експортом CSV і друком у PDF. Легенду цілей прибрано.": "Added alert reports with CSV export and PDF printing. Removed the target legend.",
+        "Оновлено інтерфейс, додано пресети карти, посилання на її вигляд, три мови та встановлення як застосунку.": "Refreshed the interface; added map presets, shareable views, three languages, and app installation.",
+        "Звіт за 48 годин": "48-hour report", "Експорт CSV": "Export CSV", "Друк / PDF": "Print / PDF",
+        "Звіт враховує вибраний рівень тривоги та збережений район.": "The report uses the selected alert level and saved district filters.",
+        "Звіт про повітряні тривоги — 48 годин": "Air-alert report — 48 hours",
+        "Немає записів за вибраними фільтрами.": "No records for the selected filters.",
+        "Звіт CSV завантажено.": "CSV report downloaded.",
+        "Не вдалося створити звіт. Спробуйте ще раз.": "Could not create the report. Please try again.",
+        "Не вдалося відкрити друк.": "Could not open print preview.",
         "Як у системі": "System", "Зменшити": "Reduce", "Увімкнути": "Enable",
         "Адміністратор": "Administrator", "Увійти": "Sign in", "Сховати": "Hide",
         "Показати панель": "Show panel", "Повернути інтерфейс": "Restore interface",
-        "цілей": "targets", "Легенда цілей": "Target legend",
-        "Вартовий-Радар v6.0 — моніторинг повітряних загроз": "Vartovyi-Radar v6.0 — air threat monitoring",
-        "v6.0 · повітряні загрози": "v6.0 · air threats",
+        "цілей": "targets",
+        "Вартовий-Радар v7.1 — моніторинг повітряних загроз": "Vartovyi-Radar v7.1 — air threat monitoring",
+        "v7.1 · повітряні загрози": "v7.1 · air threats",
         "Зв'язок із сервером": "Server connection", "Сховати інтерфейс": "Hide interface",
         "Вибери район, щоб відфільтрувати тривоги.": "Select a district to filter alerts.",
         "Фільтр змінює відображення карти, списку та історії. Звуковий сигнал працює для всіх рівнів.": "The filter changes the map, list, and history. Sound alerts work for all levels.",
@@ -1136,7 +1112,6 @@ const uiTranslations = {
         "Перевірено о ": "Checked at ", "Знято о ": "Ended at ", "Активна": "Active",
         "Очікування даних…": "Waiting for data…",
         "Інтерактивна карта України. Стрілки переміщують карту, плюс і мінус змінюють масштаб клавішами +/−.": "Interactive map of Ukraine. Use arrow keys to pan and plus/minus to zoom.",
-        "Втрачена ціль": "Lost target", "Зона загрози": "Threat zone",
         "Історія за 48 годин": "48-hour history", "Активних тривог за даними джерела немає.": "No active alerts reported by the source.",
         "Статус може оновлюватися із затримкою. Дотримуйтеся офіційних повідомлень.": "Status may be delayed. Follow official announcements.",
         "Увага": "Warning", "Прийняти": "Accept", "Пароль": "Password",
@@ -1197,7 +1172,7 @@ function translateSubtree(node) {
 }
 function applyInterfaceLanguage() {
     document.documentElement.lang = settings.language;
-    document.title = translateUiText("Вартовий-Радар v6.0 — моніторинг повітряних загроз");
+    document.title = translateUiText("Вартовий-Радар v7.1 — моніторинг повітряних загроз");
     const languageSelect = document.getElementById("languageSelect");
     if (languageSelect) languageSelect.value = settings.language;
     translateSubtree(document.body);
@@ -1220,6 +1195,7 @@ if (languageSelect) {
     languageSelect.addEventListener("change", () => {
         settings.language = ["uk", "ru", "en"].includes(languageSelect.value) ? languageSelect.value : "uk";
         applyInterfaceLanguage();
+        updateAlertReportSummary();
         saveSettings();
     });
 }
@@ -1917,6 +1893,184 @@ function renderAirAlertHistory() {
         history.appendChild(row);
     }
 }
+function getAlertReportData() {
+    const now = Date.now();
+    const cutoff = now - 48 * 60 * 60 * 1000;
+    const savedDistrict = normalizeAirAlertName(settings.savedDistrict || '');
+    const storedHistory = Array.isArray(settings.alertHistory) ? settings.alertHistory : [];
+    const history = storedHistory
+        .filter(item => item && typeof item.district === 'string')
+        .filter(item => ['red', 'yellow'].includes(item.level))
+        .filter(item => Number.isFinite(Number(item.startedAt)) &&
+            Number(item.startedAt) >= cutoff && Number(item.startedAt) <= now)
+        .filter(item => isAlertLevelVisible(item.level))
+        .filter(item => !savedDistrict || normalizeAirAlertName(item.district) === savedDistrict)
+        .map(item => ({
+            region: item.district,
+            level: item.level,
+            status: Number.isFinite(Number(item.endedAt)) && Number(item.endedAt) > 0 ? 'ended' : 'active',
+            startedAt: Number(item.startedAt),
+            endedAt: Number.isFinite(Number(item.endedAt)) && Number(item.endedAt) > 0 ? Number(item.endedAt) : null
+        }));
+    const openHistoryNames = new Set(history.filter(item => item.status === 'active')
+        .map(item => normalizeAirAlertName(item.region)));
+    let active = Array.from(airAlertIso.entries()).map(([iso, level]) => ({
+        name: airAlertRegionNames.get(iso) || iso, level
+    }));
+    for (const [name, level] of airAlertDistrictNames.entries()) active.push({ name, level });
+    active = active
+        .filter(item => isAlertLevelVisible(item.level))
+        .filter(item => !savedDistrict || normalizeAirAlertName(item.name) === savedDistrict)
+        .sort((a, b) => a.name.localeCompare(b.name, 'uk'));
+    const unrecordedActive = active
+        .filter(item => !openHistoryNames.has(normalizeAirAlertName(item.name)))
+        .map(item => ({
+            region: item.name, level: item.level, status: 'active', startedAt: null, endedAt: null
+        }));
+    const rows = history.concat(unrecordedActive)
+        .sort((a, b) => (b.startedAt || 0) - (a.startedAt || 0));
+    return { generatedAt: Date.now(), activeCount: active.length, historyCount: history.length, rows };
+}
+function alertReportLabels() {
+    return {
+        uk: {
+            headers: ['Регіон', 'Рівень', 'Статус', 'Початок', 'Завершення', 'Джерело', 'Звіт створено'],
+            levels: { red: 'Червона', yellow: 'Жовта' },
+            statuses: { active: 'Активна', ended: 'Завершена' },
+            source: 'alerts.in.ua'
+        },
+        ru: {
+            headers: ['Регион', 'Уровень', 'Статус', 'Начало', 'Завершение', 'Источник', 'Отчёт создан'],
+            levels: { red: 'Красная', yellow: 'Жёлтая' },
+            statuses: { active: 'Активна', ended: 'Завершена' },
+            source: 'alerts.in.ua'
+        },
+        en: {
+            headers: ['Region', 'Level', 'Status', 'Started at', 'Ended at', 'Source', 'Report generated'],
+            levels: { red: 'Red', yellow: 'Yellow' },
+            statuses: { active: 'Active', ended: 'Ended' },
+            source: 'alerts.in.ua'
+        }
+    }[settings.language] || {
+        headers: ['Регіон', 'Рівень', 'Статус', 'Початок', 'Завершення', 'Джерело', 'Звіт створено'],
+        levels: { red: 'Червона', yellow: 'Жовта' },
+        statuses: { active: 'Активна', ended: 'Завершена' },
+        source: 'alerts.in.ua'
+    };
+}
+function formatReportTimestamp(timestamp) {
+    if (!Number.isFinite(timestamp)) return '';
+    try { return new Date(timestamp).toISOString(); }
+    catch { return ''; }
+}
+function alertReportSummaryText(report) {
+    const summaries = {
+        uk: `Активних зараз: ${report.activeCount} · записів за 48 годин: ${report.historyCount}`,
+        ru: `Активно сейчас: ${report.activeCount} · записей за 48 часов: ${report.historyCount}`,
+        en: `Currently active: ${report.activeCount} · records in the last 48 hours: ${report.historyCount}`
+    };
+    return summaries[settings.language] || summaries.uk;
+}
+function updateAlertReportSummary() {
+    const summary = document.getElementById('alertReportSummary');
+    if (!summary) return;
+    const report = getAlertReportData();
+    summary.textContent = alertReportSummaryText(report);
+}
+function downloadAlertReport() {
+    try {
+        const report = getAlertReportData();
+        const labels = alertReportLabels();
+        const escapeCsv = value => {
+            const text = String(value ?? '');
+            const safe = /^[\t\r\n ]*[=+\-@]/.test(text) ? "'" + text : text;
+            return '"' + safe.replace(/"/g, '""') + '"';
+        };
+        const rows = report.rows.map(item => [
+            item.region,
+            labels.levels[item.level] || item.level,
+            labels.statuses[item.status] || item.status,
+            formatReportTimestamp(item.startedAt),
+            formatReportTimestamp(item.endedAt),
+            labels.source,
+            formatReportTimestamp(report.generatedAt)
+        ]);
+        if (!rows.length) rows.push(['', '', '', '', '', '', formatReportTimestamp(report.generatedAt)]);
+        const csv = '\uFEFF' + [labels.headers, ...rows]
+            .map(row => row.map(escapeCsv).join(',')).join('\r\n');
+        const blobUrl = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+        const link = document.createElement('a');
+        const date = new Date(report.generatedAt).toISOString().slice(0, 10);
+        link.href = blobUrl;
+        link.download = `air-alert-report-${date}.csv`;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 5000);
+        showAppNotice('Звіт CSV завантажено.');
+    } catch (error) {
+        console.error('Could not export air-alert report:', error);
+        showAppNotice('Не вдалося створити звіт. Спробуйте ще раз.');
+    }
+}
+function printAlertReport() {
+    const report = getAlertReportData();
+    const labels = alertReportLabels();
+    const printable = document.getElementById('printReport');
+    const heading = document.createElement('h1');
+    heading.textContent = translateUiText('Звіт про повітряні тривоги — 48 годин');
+    const generated = document.createElement('p');
+    generated.textContent = `${labels.headers[6]}: ${new Intl.DateTimeFormat(getInterfaceLocale(), {
+        dateStyle: 'medium', timeStyle: 'short'
+    }).format(new Date(report.generatedAt))} · ${alertReportSummaryText(report)}`;
+    const table = document.createElement('table');
+    const thead = document.createElement('thead');
+    const headerRow = document.createElement('tr');
+    for (const label of labels.headers.slice(0, 6)) {
+        const th = document.createElement('th');
+        th.textContent = label;
+        headerRow.appendChild(th);
+    }
+    thead.appendChild(headerRow);
+    table.appendChild(thead);
+    const tbody = document.createElement('tbody');
+    for (const item of report.rows) {
+        const row = document.createElement('tr');
+        const values = [
+            item.region,
+            labels.levels[item.level] || item.level,
+            labels.statuses[item.status] || item.status,
+            item.startedAt ? new Intl.DateTimeFormat(getInterfaceLocale(), { dateStyle: 'short', timeStyle: 'short' }).format(new Date(item.startedAt)) : '—',
+            item.endedAt ? new Intl.DateTimeFormat(getInterfaceLocale(), { dateStyle: 'short', timeStyle: 'short' }).format(new Date(item.endedAt)) : '—',
+            labels.source
+        ];
+        for (const value of values) {
+            const cell = document.createElement('td');
+            cell.textContent = value;
+            row.appendChild(cell);
+        }
+        tbody.appendChild(row);
+    }
+    if (!report.rows.length) {
+        const row = document.createElement('tr');
+        const cell = document.createElement('td');
+        cell.colSpan = 6;
+        cell.textContent = translateUiText('Немає записів за вибраними фільтрами.');
+        row.appendChild(cell);
+        tbody.appendChild(row);
+    }
+    table.appendChild(tbody);
+    printable.replaceChildren(heading, generated, table);
+    printable.hidden = false;
+    try {
+        window.print();
+    } catch (error) {
+        console.error('Could not open print preview:', error);
+        showAppNotice('Не вдалося відкрити друк.');
+    } finally {
+        printable.hidden = true;
+    }
+}
 function renderAlertSummaryPanel() {
     const list = document.getElementById('alertSummaryList');
     if (!list) return;
@@ -1955,6 +2109,7 @@ function renderAlertSummaryPanel() {
         row.append(dot, name, level);
         list.appendChild(row);
     }
+    updateAlertReportSummary();
 }
 async function loadAirAlertRaions() {
     if (airAlertRaionsData) return;
@@ -3911,88 +4066,6 @@ function connect() {
     } catch (e) { console.error("WS connect error:", e); }
 }
 
-// ═══ ЛЕГЕНДА — восстановление кнопки информации ═══
-(function initLegend() {
-    const button = document.getElementById('legendBtn');
-    const modal = document.getElementById('legendModal');
-    const closeButton = document.getElementById('legendClose');
-    const body = document.getElementById('legendBody');
-    if (!button || !modal || !closeButton || !body) return;
-
-    const groups = [
-        ['БпЛА', t => /ПП|^Р$/.test(t.typeCode)],
-        ['Ракети та КАБ', t => /^(КАБ|БР|КР|ГЗР)$/.test(t.typeCode)],
-        ['Авіація', t => t.typeCode === 'АВ']
-    ];
-    function fillLegend() {
-        body.replaceChildren();
-        for (const [heading, predicate] of groups) {
-            const templates = SPAWN_TEMPLATES.filter(predicate);
-            if (!templates.length) continue;
-            const section = document.createElement('div');
-            section.className = 'legend-section-title';
-            section.textContent = heading;
-            body.appendChild(section);
-            for (const tpl of templates) {
-                const row = document.createElement('div');
-                row.className = 'legend-row';
-                const icon = document.createElement('span');
-                icon.className = 'ico';
-                const symbol = document.createElement('span');
-                symbol.style.cssText = 'display:block;width:26px;height:26px;background-color:' + currentObjColorHex() + ';mask:url("' + tpl.img + '") center / contain no-repeat;-webkit-mask:url("' + tpl.img + '") center / contain no-repeat';
-                icon.appendChild(symbol);
-                const name = document.createElement('span');
-                name.className = 'name';
-                name.textContent = tpl.type;
-                const code = document.createElement('span');
-                code.className = 'code';
-                code.textContent = tpl.typeCode;
-                row.append(icon, name, code);
-                body.appendChild(row);
-            }
-        }
-        const divider = document.createElement('div');
-        divider.className = 'legend-divider';
-        body.appendChild(divider);
-        const lost = document.createElement('div');
-        lost.className = 'legend-lost';
-        lost.innerHTML = '<span class="lost-ico">?</span><span class="lost-text"><b>Втрачена ціль</b> — позначка цілі після втрати її відстеження.</span>';
-        body.appendChild(lost);
-        const zone = document.createElement('div');
-        zone.className = 'legend-threat-zone';
-        zone.innerHTML = '<span class="tz-ico">⚠️</span><span class="tz-text"><b>Зона загрози</b> — область, позначена на карті.</span>';
-        body.appendChild(zone);
-    }
-    function closeLegend(restoreFocus = true) {
-        modal.classList.remove('open');
-        modal.inert = true;
-        modal.setAttribute('aria-hidden', 'true');
-        button.setAttribute('aria-expanded', 'false');
-        if (restoreFocus) button.focus();
-    }
-    button.setAttribute('aria-expanded', 'false');
-    modal.inert = true;
-    button.setAttribute('aria-controls', 'legendModal');
-    button.addEventListener('click', function() {
-        if (modal.classList.contains('open')) { closeLegend(); return; }
-        fillLegend();
-        modal.classList.add('open');
-        modal.inert = false;
-        modal.setAttribute('aria-hidden', 'false');
-        button.setAttribute('aria-expanded', 'true');
-        closeButton.focus();
-    });
-    closeButton.addEventListener('click', closeLegend);
-    document.addEventListener('keydown', e => {
-        if (e.key === 'Escape' && modal.classList.contains('open')) closeLegend();
-    });
-    document.addEventListener('click', e => {
-        if (modal.classList.contains('open') && !modal.contains(e.target) && !button.contains(e.target)) {
-            closeLegend(false);
-        }
-    });
-})();
-
 // ═══ UI ═══
 const settingsPanel = document.getElementById("settingsPanel");
 const settingsButton = document.getElementById("settingsBtn");
@@ -4023,6 +4096,8 @@ function setAlertsPanelOpen(open) {
 alertsButton.onclick = () => setAlertsPanelOpen(!alertsPanel.classList.contains("open"));
 document.getElementById("alertsClose").onclick = () => setAlertsPanelOpen(false);
 renderAlertSummaryPanel();
+document.getElementById("downloadAlertReport").addEventListener("click", downloadAlertReport);
+document.getElementById("printAlertReport").addEventListener("click", printAlertReport);
 const toggleNameLabel = document.getElementById("toggleNameLabel");
 toggleNameLabel.classList.toggle("on", settings.showNameLabel);
 toggleNameLabel.setAttribute("aria-checked", String(settings.showNameLabel));
@@ -4878,7 +4953,7 @@ function initAdminSpawnUI() {
 /* ═══════════════════════════════════════════════════════════════
    PHO / FULL — чит-коды на карте
    pho  → выделить зону → PNG (карта + объекты + траектория + водяной знак)
-   full → вся Украина по центру + легенда с иконками целей → PNG
+   full → вся Украина по центру → PNG
 ═══════════════════════════════════════════════════════════════ */
 (function initPhoExport() {
     const WATERMARK_DEFAULT = "Вартовий-Радар";
@@ -4966,7 +5041,7 @@ function initAdminSpawnUI() {
             stopSelect();
             if (r.w < 30 || r.h < 30) { toast("Зона слишком маленькая — отменено"); return; }
             busy = true;
-            exportArea(r, false).finally(function () { busy = false; });
+            exportArea(r).finally(function () { busy = false; });
         });
         overlay.addEventListener("pointercancel", function () { dragging = false; box.style.display = "none"; });
     }
@@ -5021,7 +5096,7 @@ function initAdminSpawnUI() {
             await waitMapReady(8000);
             await new Promise(function (r) { setTimeout(r, 250); });
             const mr = map.getContainer().getBoundingClientRect();
-            await exportArea({ x: mr.left, y: mr.top, w: mr.width, h: mr.height }, true);
+            await exportArea({ x: mr.left, y: mr.top, w: mr.width, h: mr.height }, "ukraine_");
         } catch (e) {
             console.error("FULL export:", e);
             toast("Ошибка экспорта: " + (e && e.message ? e.message : e), 5000);
@@ -5063,52 +5138,10 @@ function initAdminSpawnUI() {
     function inView(cx, cy, R, m) {
         return cx > R.x - m && cx < R.x + R.w + m && cy > R.y - m && cy < R.y + R.h + m;
     }
-    function rrect(ctx, x, y, w, h, r) {
-        ctx.beginPath();
-        if (ctx.roundRect) ctx.roundRect(x, y, w, h, r); else ctx.rect(x, y, w, h);
-    }
-
-    // ─── легенда: только те типы, что реально есть в кадре ───
-    function collectLegend(R) {
-        const byId = new Map();
-        for (const f of flyers) {
-            if (!f.marker || !f.marker._map) continue;
-            const el = f.marker.getElement();
-            if (!el) continue;
-            const r = el.getBoundingClientRect();
-            if (!inView(r.left + r.width / 2, r.top + r.height / 2, R, 0)) continue;
-            const tpl = f.template || findTemplateByType(f.ev.type);
-            const e = byId.get(tpl.id) || { tpl: tpl, n: 0 };
-            e.n++;
-            byId.set(tpl.id, e);
-        }
-        return Array.from(byId.values());
-    }
-    function legendLayout(ctx, items, W) {
-        if (!items.length) return null;
-        const pad = 14, icon = 28, gap = 9, margin = 14, titleH = 22, rowH = 36, colGap = 22;
-        ctx.font = "600 13px Inter, system-ui, sans-serif";
-        const labels = items.map(function (it) { return it.tpl.name + (it.n > 1 ? "  ×" + it.n : ""); });
-        const maxText = Math.max.apply(null, labels.map(function (t) { return ctx.measureText(t).width; }));
-        const cellW = icon + gap + maxText + colGap;
-        const availW = W - margin * 2 - pad * 2 + colGap;
-        const cols = Math.max(1, Math.min(items.length, Math.floor(availW / cellW)));
-        const rows = Math.ceil(items.length / cols);
-        const boxW = Math.min(W - margin * 2, cols * cellW - colGap + pad * 2);
-        const boxH = pad * 2 + titleH + rows * rowH;
-        return { pad: pad, icon: icon, gap: gap, margin: margin, titleH: titleH, rowH: rowH, cellW: cellW,
-                 cols: cols, boxW: boxW, boxH: boxH, labels: labels, stripH: boxH + margin * 2 };
-    }
-
-    async function exportArea(R, withLegend) {
+    async function exportArea(R, filenamePrefix = "map_") {
         toast("Рисую PNG…", 4000);
         try {
             const dpr = window.devicePixelRatio || 1;
-            const legendItems = withLegend ? collectLegend(R) : [];
-
-            // предварительно меряем легенду, чтобы знать высоту итоговой картинки
-            const probe = document.createElement("canvas").getContext("2d");
-            const lay = withLegend ? legendLayout(probe, legendItems, Math.min(R.w, Math.max(300, R.w * 0.5))) : null;
             const totalH = R.h;
 
             let S = Math.max(dpr, 2);
@@ -5209,7 +5242,7 @@ function initAdminSpawnUI() {
 
             // 5) объекты (иконки с поворотом + чёрный контур, как на карте)
             const color = currentObjColorHex();
-            const ICON = withLegend ? 22 : 34;
+            const ICON = 34;
             // Толщина контура в экранных px (с учётом scale экспорта)
             const outlinePx = 1;
             const outlineOffsets = [
@@ -5290,36 +5323,6 @@ function initAdminSpawnUI() {
             }
             ctx.restore(); // снять клип карты
 
-            // ── легенда: прямо на карте, внизу слева ──
-            if (lay) {
-                ctx.setTransform(S, 0, 0, S, 0, 0);
-                const dark = currentTheme === "dark";
-                const boxBg = dark ? "rgba(13,17,23,0.88)" : "rgba(255,255,255,0.92)";
-                const txt = dark ? "#e6edf3" : "#1f2328";
-                const sub = dark ? "#8b949e" : "#57606a";
-                const line = dark ? "rgba(255,255,255,0.18)" : "rgba(0,0,0,0.18)";
-                const bx = lay.margin, by = R.h - lay.boxH - lay.margin;
-                rrect(ctx, bx, by, lay.boxW, lay.boxH, 10);
-                ctx.fillStyle = boxBg; ctx.fill();
-                ctx.lineWidth = 1; ctx.strokeStyle = line; ctx.stroke();
-
-                ctx.font = "700 11px Inter, system-ui, sans-serif";
-                ctx.fillStyle = sub; ctx.textAlign = "left"; ctx.textBaseline = "middle";
-                ctx.fillText("ЛЕГЕНДА — ОБЪЕКТЫ НА КАРТЕ", bx + lay.pad, by + lay.pad + 6);
-
-                ctx.font = "600 13px Inter, system-ui, sans-serif";
-                for (let i = 0; i < legendItems.length; i++) {
-                    const it = legendItems[i];
-                    const col = i % lay.cols, row = Math.floor(i / lay.cols);
-                    const ix = bx + lay.pad + col * lay.cellW;
-                    const iy = by + lay.pad + lay.titleH + row * lay.rowH;
-                    const im = await loadImg(it.tpl.img, false);
-                    if (im) ctx.drawImage(tint(im, color, lay.icon), ix, iy + (lay.rowH - lay.icon) / 2, lay.icon, lay.icon);
-                    ctx.fillStyle = txt; ctx.textAlign = "left"; ctx.textBaseline = "middle";
-                    ctx.fillText(lay.labels[i], ix + lay.icon + lay.gap, iy + lay.rowH / 2);
-                }
-            }
-
             // 7) скопировать в буфер обмена (если не вышло — скачать файл)
             cv.toBlob(async function (blob) {
                 if (!blob) { toast("Не удалось собрать PNG (карта заблокирована CORS)", 4000); return; }
@@ -5331,7 +5334,7 @@ function initAdminSpawnUI() {
                     console.warn("Clipboard:", err);
                     const d = new Date();
                     const p = function (n) { return String(n).padStart(2, "0"); };
-                    const name = (withLegend ? "ukraine_" : "map_") + d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) + "_" + p(d.getHours()) + p(d.getMinutes()) + p(d.getSeconds()) + ".png";
+                    const name = filenamePrefix + d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate()) + "_" + p(d.getHours()) + p(d.getMinutes()) + p(d.getSeconds()) + ".png";
                     const a = document.createElement("a");
                     a.href = URL.createObjectURL(blob);
                     a.download = name;
