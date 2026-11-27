@@ -725,31 +725,6 @@ html[data-theme="light"] .target-block-label { background:rgba(248,251,253,.94);
   font-size:11px;
 }
 .target-popup .tp-row .val { text-align:right; }
-#alertLegend {
-  position:fixed;
-  left:14px;
-  bottom:18px;
-  z-index:1000;
-  display:flex;
-  align-items:center;
-  gap:12px;
-  padding:8px 11px;
-  color:var(--txt);
-  background:rgba(8,17,30,.88);
-  border:1px solid var(--border-strong);
-  border-radius:10px;
-  box-shadow:var(--shadow);
-  font:600 10px var(--sans);
-  pointer-events:none;
-  backdrop-filter:blur(10px);
-}
-#alertLegend[hidden] { display:none; }
-html[data-theme="light"] #alertLegend { background:rgba(248,251,253,.94); }
-#alertLegend .alert-legend-item { display:flex; align-items:center; gap:6px; white-space:nowrap; }
-#alertLegend .alert-legend-dot { width:9px; height:9px; border-radius:50%; }
-#alertLegend .alert-legend-dot.yellow { background:#ffd43b; box-shadow:0 0 8px rgba(255,212,59,.55); }
-#alertLegend .alert-legend-dot.red { background:#ff304f; box-shadow:0 0 8px rgba(255,48,79,.5); }
-
 @media (max-width:640px) {
   :root { --bar-h:52px; }
   #topbar > * { padding:0 8px; }
@@ -764,7 +739,6 @@ html[data-theme="light"] #alertLegend { background:rgba(248,251,253,.94); }
   .panel { top:8px; bottom:8px; max-width:calc(100vw - 20px); }
   #settingsPanel { left:10px; transform:translateX(calc(-100% - 16px)); }
   .panel-body { padding:6px 14px 20px; }
-  #alertLegend { left:10px; bottom:12px; gap:9px; padding:7px 9px; font-size:9px; }
   .alert-summary-panel { right:10px; transform:translateX(calc(100% + 18px)); }
   .target-legend-panel {
     top:calc(var(--bar-h) + 10px);
@@ -778,10 +752,6 @@ html[data-theme="light"] #alertLegend { background:rgba(248,251,253,.94); }
 <body>
 
 <div id="map"></div>
-<div id="alertLegend" role="img" aria-label="Жовтий — БпЛА, червоний — ракетна загроза">
-  <span class="alert-legend-item"><i class="alert-legend-dot yellow"></i>БпЛА</span>
-  <span class="alert-legend-item"><i class="alert-legend-dot red"></i>Ракетна</span>
-</div>
 <div id="centerCrosshair" aria-hidden="true"><div class="ch-h"></div><div class="ch-v"></div></div>
 <div id="jsError"></div>
 
@@ -2277,7 +2247,6 @@ async function refreshAirAlertRegions() {
 function toggleAirAlertVisibility(enabled) {
     settings.showAirAlerts = enabled;
     const el = document.getElementById('toggleAirAlerts');
-    document.getElementById('alertLegend').hidden = !enabled;
     el.classList.toggle('on', enabled);
     el.setAttribute('aria-checked', String(enabled));
     renderOccupiedRegions();
@@ -2296,7 +2265,6 @@ function toggleAirAlertVisibility(enabled) {
     saveSettings();
 }
 const airAlertSwitch = document.getElementById('toggleAirAlerts');
-document.getElementById('alertLegend').hidden = !settings.showAirAlerts;
 airAlertSwitch.classList.toggle('on', settings.showAirAlerts);
 airAlertSwitch.setAttribute('aria-checked', String(settings.showAirAlerts));
 airAlertSwitch.onclick = () => toggleAirAlertVisibility(!settings.showAirAlerts);
